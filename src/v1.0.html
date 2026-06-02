@@ -1,0 +1,2085 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>Chord DHT 学习系统设计文档</title>
+    <style>
+        :root { color-scheme: light only; }
+
+        body {
+            font-family: Calibri, sans-serif;
+            font-size: 11pt;
+            line-height: 1.6;
+            color: #000000;
+            background: #ffffff;
+            max-width: 816px;
+            margin: 0 auto;
+            padding: 72px;
+        }
+
+        h1 { font-family: Calibri, sans-serif; font-size: 22pt; font-weight: bold; color: #1a1a1a; margin-top: 28pt; margin-bottom: 8pt; line-height: 1.3; }
+        h2 { font-family: Calibri, sans-serif; font-size: 16pt; font-weight: bold; color: #1a3a6b; margin-top: 20pt; margin-bottom: 6pt; line-height: 1.3; border-bottom: 1px solid #c0c8d8; padding-bottom: 3pt; }
+        h3 { font-family: Calibri, sans-serif; font-size: 13pt; font-weight: bold; color: #2b5797; margin-top: 14pt; margin-bottom: 5pt; line-height: 1.3; }
+        h4 { font-family: Calibri, sans-serif; font-size: 11pt; font-weight: bold; color: #1a1a1a; margin-top: 10pt; margin-bottom: 4pt; }
+
+        p { margin-top: 0; margin-bottom: 7pt; }
+
+        table { border-collapse: collapse; width: 100%; margin-top: 12pt; margin-bottom: 14pt; font-size: 10pt; }
+        th, td { border: 1px solid #aab4c8; padding: 6px 9px; text-align: left; vertical-align: top; }
+        th { font-weight: bold; background-color: #dde4f0; color: #1a1a1a; }
+        tr:nth-child(even) td { background-color: #f5f7fc; }
+
+        ul, ol { margin-top: 5pt; margin-bottom: 7pt; padding-left: 36px; }
+        li { margin-bottom: 4pt; }
+
+        code {
+            font-family: Consolas, monospace;
+            font-size: 9.5pt;
+            background-color: #f0f2f7;
+            padding: 1px 4px;
+            color: #1a1a1a;
+        }
+
+        pre {
+            font-family: Consolas, monospace;
+            font-size: 9pt;
+            background-color: #f2f4f8;
+            border: 1px solid #c8d0e0;
+            border-left: 4px solid #2b5797;
+            padding: 12px 14px;
+            margin: 10pt 0;
+            white-space: pre-wrap;
+            word-break: break-word;
+            line-height: 1.5;
+        }
+
+        .callout {
+            border: 1px solid #c8d0e0;
+            border-left: 4px solid #2b5797;
+            background-color: #e8eef7;
+            padding: 10px 14px;
+            margin: 12pt 0;
+        }
+        .callout-label {
+            font-weight: bold;
+            margin-bottom: 4pt;
+            color: #1a3a6b;
+        }
+        .callout-warning {
+            border-left-color: #cc0000;
+            background-color: #fce8e8;
+        }
+        .callout-warning .callout-label { color: #cc0000; }
+        .callout-note {
+            border-left-color: #666666;
+            background-color: #f5f5f5;
+        }
+        .callout-note .callout-label { color: #444444; }
+        .callout-important {
+            border-left-color: #cc7a00;
+            background-color: #fff4e0;
+        }
+        .callout-important .callout-label { color: #8a5000; }
+
+        .title-block-main {
+            border-top: 4px solid #2b5797;
+            border-bottom: 2px solid #2b5797;
+            padding: 28px 0 22px 0;
+            margin-bottom: 28pt;
+        }
+        .doc-title {
+            font-size: 28pt;
+            font-weight: bold;
+            color: #1a3a6b;
+            margin-bottom: 6pt;
+            line-height: 1.2;
+        }
+        .doc-subtitle {
+            font-size: 14pt;
+            color: #2b5797;
+            margin-bottom: 16pt;
+        }
+        .doc-meta-table {
+            width: auto;
+            border: none;
+            margin: 0;
+        }
+        .doc-meta-table td {
+            border: none;
+            padding: 2px 18px 2px 0;
+            background: none;
+            font-size: 10pt;
+            color: #333333;
+        }
+        .doc-meta-table td:first-child {
+            font-weight: bold;
+            color: #1a3a6b;
+            white-space: nowrap;
+        }
+
+        .toc-entry {
+            margin-bottom: 3pt;
+            font-size: 10.5pt;
+        }
+        .toc-chapter {
+            font-weight: bold;
+            color: #1a3a6b;
+            margin-top: 8pt;
+            margin-bottom: 2pt;
+        }
+        .toc-section {
+            padding-left: 18px;
+            color: #333333;
+        }
+
+        .chapter-divider {
+            border: none;
+            border-top: 2px solid #2b5797;
+            margin-top: 32pt;
+            margin-bottom: 4pt;
+        }
+        .chapter-label {
+            font-size: 9.5pt;
+            color: #2b5797;
+            font-weight: bold;
+            letter-spacing: 1px;
+            margin-bottom: 2pt;
+        }
+
+        .api-block {
+            border: 1px solid #c8d0e0;
+            margin: 14pt 0;
+            padding: 0;
+        }
+        .api-header {
+            background-color: #dde4f0;
+            padding: 7px 12px;
+            font-weight: bold;
+            font-size: 10.5pt;
+            color: #1a3a6b;
+            border-bottom: 1px solid #c8d0e0;
+        }
+        .api-body {
+            padding: 10px 14px;
+        }
+        .api-method-get { color: #1a7a2b; font-weight: bold; }
+        .api-method-post { color: #7a4a00; font-weight: bold; }
+        .api-method-delete { color: #cc0000; font-weight: bold; }
+
+        .step-block {
+            border-left: 3px solid #2b5797;
+            padding-left: 14px;
+            margin: 8pt 0;
+        }
+
+        .version-block {
+            border-top: 2px solid #2b5797;
+            margin-top: 40pt;
+            padding-top: 12pt;
+            font-size: 9.5pt;
+            color: #555555;
+        }
+
+        @media print { body { padding: 0; max-width: none; } }
+    </style>
+</head>
+<body data-id="0">
+
+<!-- ==================== 标题块 ==================== -->
+<div data-id="1" class="title-block-main">
+    <div data-id="2" class="doc-title">Chord DHT 学习系统设计文档</div>
+    <div data-id="3" class="doc-subtitle">基于 Chord 算法的学习型分布式哈希表系统</div>
+    <table data-id="4" class="doc-meta-table">
+        <tr data-id="5">
+            <td data-id="6">文档版本</td>
+            <td data-id="7">v1.0</td>
+        </tr>
+        <tr data-id="8">
+            <td data-id="9">创建日期</td>
+            <td data-id="10">2026 年 5 月 27 日</td>
+        </tr>
+        <tr data-id="11">
+            <td data-id="12">文档状态</td>
+            <td data-id="13">正式发布</td>
+        </tr>
+        <tr data-id="14">
+            <td data-id="15">适用对象</td>
+            <td data-id="16">学习分布式哈希表（DHT）的工程师</td>
+        </tr>
+        <tr data-id="17">
+            <td data-id="18">适用范围</td>
+            <td data-id="19">学习用途，不适合直接用于生产环境</td>
+        </tr>
+        <tr data-id="20">
+            <td data-id="21">协议栈</td>
+            <td data-id="22">RESTful HTTP + JSON，SHA-1（m=160），r=3</td>
+        </tr>
+    </table>
+</div>
+
+<!-- ==================== 目录 ==================== -->
+<h1 data-id="23">目录</h1>
+
+<div data-id="24" class="toc-entry toc-chapter">第一章：背景与设计目标</div>
+<div data-id="25" class="toc-entry toc-section">1.1 Chord 算法简述</div>
+<div data-id="26" class="toc-entry toc-section">1.2 设计目标与约束</div>
+<div data-id="27" class="toc-entry toc-section">1.3 不在设计范围内</div>
+
+<div data-id="28" class="toc-entry toc-chapter">第二章：核心概念与数据结构</div>
+<div data-id="29" class="toc-entry toc-section">2.1 ID 空间与一致性哈希</div>
+<div data-id="30" class="toc-entry toc-section">2.2 手指表（Finger Table）</div>
+<div data-id="31" class="toc-entry toc-section">2.3 后继列表（Successor List）</div>
+<div data-id="32" class="toc-entry toc-section">2.4 前驱节点（Predecessor）</div>
+<div data-id="33" class="toc-entry toc-section">2.5 节点信息对象（NodeInfo Schema）</div>
+
+<div data-id="34" class="toc-entry toc-chapter">第三章：系统架构</div>
+<div data-id="35" class="toc-entry toc-section">3.1 整体架构描述</div>
+<div data-id="36" class="toc-entry toc-section">3.2 节点内部模块</div>
+<div data-id="37" class="toc-entry toc-section">3.3 节点生命周期状态机</div>
+<div data-id="38" class="toc-entry toc-section">3.4 Tracker 的角色与限制</div>
+
+<div data-id="39" class="toc-entry toc-chapter">第四章：核心算法详述</div>
+<div data-id="40" class="toc-entry toc-section">4.1 加入网络（Join）</div>
+<div data-id="41" class="toc-entry toc-section">4.2 查找后继（find_successor）</div>
+<div data-id="42" class="toc-entry toc-section">4.3 最近前驱（closest_preceding_node）</div>
+<div data-id="43" class="toc-entry toc-section">4.4 稳定化协议（Stabilize）</div>
+<div data-id="44" class="toc-entry toc-section">4.5 通知协议（Notify）</div>
+<div data-id="45" class="toc-entry toc-section">4.6 手指表修复（fix_fingers）</div>
+<div data-id="46" class="toc-entry toc-section">4.7 前驱检查（check_predecessor）</div>
+<div data-id="47" class="toc-entry toc-section">4.8 主动离网（Graceful Leave）</div>
+
+<div data-id="48" class="toc-entry toc-chapter">第五章：周期维护任务</div>
+<div data-id="49" class="toc-entry toc-section">5.1 任务调度总览</div>
+<div data-id="50" class="toc-entry toc-section">5.2 超时与重试策略</div>
+<div data-id="51" class="toc-entry toc-section">5.3 ISOLATED 状态的处理</div>
+
+<div data-id="52" class="toc-entry toc-chapter">第六章：边缘情况与处理策略</div>
+<div data-id="53" class="toc-entry toc-section">6.1 ~ 6.10 各类边缘场景</div>
+
+<div data-id="54" class="toc-entry toc-chapter">第七章：RESTful API 规范</div>
+<div data-id="55" class="toc-entry toc-section">7.1 通用约定</div>
+<div data-id="56" class="toc-entry toc-section">7.2 统一错误响应格式</div>
+<div data-id="57" class="toc-entry toc-section">7.3 节点 API（Node API）— API 1 至 API 10</div>
+<div data-id="58" class="toc-entry toc-section">7.4 Tracker API — API 1 至 API 8</div>
+
+<div data-id="59" class="toc-entry toc-chapter">第八章：消息时序图（文字描述）</div>
+<div data-id="60" class="toc-entry toc-section">8.1 新节点加入网络时序</div>
+<div data-id="61" class="toc-entry toc-section">8.2 节点主动离网时序</div>
+<div data-id="62" class="toc-entry toc-section">8.3 节点崩溃后的恢复时序</div>
+
+<div data-id="63" class="toc-entry toc-chapter">第九章：配置参数参考</div>
+<div data-id="64" class="toc-entry toc-chapter">第十章：学习扩展建议</div>
+<div data-id="65" class="toc-entry toc-section">10.1 下一步实验方向</div>
+<div data-id="66" class="toc-entry toc-section">10.2 与真实 DHT 系统的主要差异</div>
+
+
+<!-- ==================== 第一章 ==================== -->
+<hr data-id="67" class="chapter-divider">
+<div data-id="68" class="chapter-label">第一章</div>
+<h1 data-id="69">背景与设计目标</h1>
+
+<h2 data-id="70">1.1 Chord 算法简述</h2>
+
+<p data-id="71">Chord 是由 Stoica 等人于 2001 年在 MIT 提出的一种分布式路由协议，是分布式哈希表（Distributed Hash Table，DHT）领域最具代表性的算法之一。其核心思想是将所有节点和键（Key）均映射到一个统一的环形 ID 空间，通过一致性哈希实现去中心化的分布式路由。</p>
+
+<p data-id="72">在 Chord 中，ID 空间被定义为 <code data-id="73">[0, 2^m)</code> 的整数环，本系统中 <strong data-id="74">m = 160</strong>，使用 SHA-1 哈希函数生成节点和键的 ID。每个节点的 ID 由其网络地址（<code data-id="75">host:port</code>）经 SHA-1 运算得出，表示为 40 位十六进制字符串。</p>
+
+<p data-id="76">Chord 的关键路由规则基于<strong data-id="77">顺时针后继原则</strong>：对于给定的键 <code data-id="78">k</code>，负责该键的节点是环上 ID 大于等于 <code data-id="79">k</code> 的第一个节点，称为 <code data-id="80">k</code> 的后继节点（Successor）。这意味着每个节点 N 负责区间 <code data-id="81">(predecessor.id, N.id]</code> 内的所有键。</p>
+
+<p data-id="82">Chord 的路由效率是其最重要的属性之一：在一个有 N 个节点的网络中，任意键的查找最多需要 <strong data-id="83">O(log N)</strong> 跳，这得益于每个节点维护的手指表（Finger Table）结构。手指表中的第 i 个条目指向从当前节点出发、在环上距离 <code data-id="84">2^i</code> 处的后继节点，使得查找请求每跳都能将剩余距离缩小一半，从而实现对数级的查找效率。</p>
+
+<div data-id="85" class="callout">
+    <div data-id="86" class="callout-label">核心性质总结</div>
+    <ul data-id="87" style="margin-bottom:0;">
+        <li data-id="88"><strong data-id="89">ID 空间</strong>：环形整数空间 [0, 2^160)，基于 SHA-1 哈希</li>
+        <li data-id="90"><strong data-id="91">后继规则</strong>：顺时针方向找到 ID ≥ 目标 ID 的第一个节点</li>
+        <li data-id="92"><strong data-id="93">查找复杂度</strong>：O(log N) 跳，N 为网络节点总数</li>
+        <li data-id="94"><strong data-id="95">维护复杂度</strong>：每个节点需维护 O(log N) 个路由表条目（手指表）</li>
+        <li data-id="96"><strong data-id="97">容错性</strong>：通过后继列表实现 r 个节点失效的容忍</li>
+    </ul>
+</div>
+
+<h2 data-id="98">1.2 设计目标与约束</h2>
+
+<p data-id="99">本系统是一个专为工程师学习 Chord 协议而设计的实现，强调协议语义的正确性和代码的可读性，而非生产级的性能与安全性。以下是本系统明确的设计目标与约束条件：</p>
+
+<table data-id="100">
+    <tr data-id="101">
+        <th data-id="102">约束维度</th>
+        <th data-id="103">设计决策</th>
+        <th data-id="104">选择理由</th>
+    </tr>
+    <tr data-id="105">
+        <td data-id="106"><strong data-id="107">用途定位</strong></td>
+        <td data-id="108">仅组网与路由，不存储 KV 数据</td>
+        <td data-id="109">聚焦 Chord 协议本身，降低实现复杂度</td>
+    </tr>
+    <tr data-id="110">
+        <td data-id="111"><strong data-id="112">通信协议</strong></td>
+        <td data-id="113">RESTful HTTP + JSON</td>
+        <td data-id="114">无需自定义序列化，调试友好，工具链成熟</td>
+    </tr>
+    <tr data-id="115">
+        <td data-id="116"><strong data-id="117">维护周期</strong></td>
+        <td data-id="118">每 60 秒执行一次（check_predecessor + stabilize + fix_fingers）</td>
+        <td data-id="119">频率适中，便于学习者观察拓扑变化</td>
+    </tr>
+    <tr data-id="120">
+        <td data-id="121"><strong data-id="122">Tracker 角色</strong></td>
+        <td data-id="123">仅负责 bootstrap 引导与全局健康统计，可选组件</td>
+        <td data-id="124">Tracker 下线后 DHT 网络完全自洽运行</td>
+    </tr>
+    <tr data-id="125">
+        <td data-id="126"><strong data-id="127">ID 空间</strong></td>
+        <td data-id="128">m = 160（SHA-1）</td>
+        <td data-id="129">与 Chord 原论文一致，碰撞概率可忽略</td>
+    </tr>
+    <tr data-id="130">
+        <td data-id="131"><strong data-id="132">后继列表长度</strong></td>
+        <td data-id="133">r = 3</td>
+        <td data-id="134">在容错性和实现复杂度之间取得平衡</td>
+    </tr>
+    <tr data-id="135">
+        <td data-id="136"><strong data-id="137">手指表长度</strong></td>
+        <td data-id="138">= m = 160 个条目</td>
+        <td data-id="139">完整实现 Chord 手指表，覆盖全部 ID 空间</td>
+    </tr>
+</table>
+
+<h2 data-id="140">1.3 不在设计范围内</h2>
+
+<p data-id="141">为保持系统的学习聚焦性，以下功能明确排除在本系统的设计范围之外。在进行实际开发时，若需要这些功能，应在本系统基础上进行独立的扩展设计：</p>
+
+<ul data-id="142">
+    <li data-id="143"><strong data-id="144">数据存储与 KV 操作</strong>：本系统不实现任何键值存储逻辑，<code data-id="145">PUT</code> 和 <code data-id="146">GET</code> 数据操作不在协议中。（参见 10.1 节的扩展建议）</li>
+    <li data-id="147"><strong data-id="148">TLS / 认证 / 鉴权</strong>：所有 HTTP 通信均为明文，不实现任何身份验证机制。</li>
+    <li data-id="149"><strong data-id="150">跨数据中心部署</strong>：本系统假设节点在同一局域网或可直接 HTTP 互访的环境中运行。</li>
+    <li data-id="151"><strong data-id="152">生产级性能优化</strong>：不实现连接池、批量请求、压缩传输等优化手段。</li>
+    <li data-id="153"><strong data-id="154">Sybil 攻击防御</strong>：节点 ID 由本地 SHA-1 计算，不经过中心化验证。</li>
+    <li data-id="155"><strong data-id="156">NAT 穿透</strong>：不处理节点位于 NAT 或防火墙后的网络拓扑问题。</li>
+</ul>
+
+
+<!-- ==================== 第二章 ==================== -->
+<hr data-id="157" class="chapter-divider">
+<div data-id="158" class="chapter-label">第二章</div>
+<h1 data-id="159">核心概念与数据结构</h1>
+
+<h2 data-id="160">2.1 ID 空间与一致性哈希</h2>
+
+<p data-id="161">Chord 协议的基础是将节点和键统一映射到同一个环形 ID 空间，从而实现去中心化的路由。本系统的 ID 空间定义如下：</p>
+
+<p data-id="162"><strong data-id="163">ID 生成规则</strong>：每个节点的 ID 通过对其规范化 HTTPS URI 字符串执行 SHA-1 哈希运算得到，结果为一个 160 位整数，表示为 40 个十六进制字符的字符串。URI 规范化步骤：① scheme 小写（https://）；② host 小写；③ 去除尾部斜杠；④ 非默认 443 端口须保留（如 <code data-id="165">https://node1.example.com:8443</code>）。例如，对 URI <code data-id="164">https://node1.example.com</code> 执行 SHA-1 得到的 ID 为 <code data-id="166">a94a8fe5ccb19ba61c4c0873d391e987982fbbd3</code>。</p>
+
+<p data-id="167"><strong data-id="168">环形空间</strong>：所有 ID 均在模 <code data-id="169">2^160</code> 的整数环上运算。环上的最大值 <code data-id="170">2^160 - 1</code> 与 <code data-id="171">0</code> 在逻辑上相邻，形成一个首尾相连的环形结构。</p>
+
+<p data-id="172"><strong data-id="173">节点责任区间</strong>：节点 N 负责管理所有 ID 落在区间 <code data-id="174">(predecessor.id, N.id]</code> 内的键。这意味着若一个节点加入或离开，只有其直接相邻区间的数据归属需要重新调整，体现了一致性哈希的核心优势。</p>
+
+<p data-id="175">以下是本系统使用的两个基础环形运算函数：</p>
+
+<table data-id="176">
+    <tr data-id="177">
+        <th data-id="178">函数</th>
+        <th data-id="179">定义</th>
+        <th data-id="180">用途</th>
+    </tr>
+    <tr data-id="181">
+        <td data-id="182"><code data-id="183">clockwise_distance(a, b)</code></td>
+        <td data-id="184"><code data-id="185">(b - a) mod 2^160</code></td>
+        <td data-id="186">计算从 a 到 b 的顺时针距离（非负整数）</td>
+    </tr>
+    <tr data-id="187">
+        <td data-id="188"><code data-id="189">in_range(x, a, b)</code></td>
+        <td data-id="190">x 在环上区间 (a, b] 内</td>
+        <td data-id="191">判断 x 是否落在某个环形区间（开闭区间，顺时针方向）</td>
+    </tr>
+</table>
+
+<p data-id="192"><code data-id="193">in_range(x, a, b)</code> 的实现需处理环绕情况：若 <code data-id="194">a &lt; b</code>，则判断 <code data-id="195">a &lt; x &lt;= b</code>；若 <code data-id="196">a &gt;= b</code>（区间跨越 0 点），则判断 <code data-id="197">x &gt; a OR x &lt;= b</code>。</p>
+
+<h2 data-id="198">2.2 手指表（Finger Table）</h2>
+
+<p data-id="199">手指表是 Chord 实现 O(log N) 查找的关键数据结构。每个节点 N 维护一个包含 m = 160 个条目的手指表，使节点能够在路由时快速跳跃到距目标 ID 较近的节点，而不必逐步沿后继链前进。</p>
+
+<p data-id="200"><strong data-id="201">条目定义</strong>：手指表的第 i 个条目（i 从 0 到 159）定义为：</p>
+<ul data-id="202">
+    <li data-id="203"><code data-id="204">finger[i].start = (self.id + 2^i) mod 2^160</code>：这是一个假想的"探针"位置，代表从自身 ID 出发，在环上距离 <code data-id="205">2^i</code> 处的坐标。</li>
+    <li data-id="206"><code data-id="207">finger[i].node = successor(finger[i].start)</code>：即负责 <code data-id="208">finger[i].start</code> 的实际节点，是该条目存储的路由目标。</li>
+</ul>
+
+<table data-id="209">
+    <tr data-id="210">
+        <th data-id="211">条目 i</th>
+        <th data-id="212">start 公式</th>
+        <th data-id="213">覆盖范围（理论跳跃距离）</th>
+        <th data-id="214">路由作用</th>
+    </tr>
+    <tr data-id="215">
+        <td data-id="216">0</td>
+        <td data-id="217">(N + 2^0) mod 2^160</td>
+        <td data-id="218">N+1（紧邻后继）</td>
+        <td data-id="219">覆盖最小距离，等同于 successor</td>
+    </tr>
+    <tr data-id="220">
+        <td data-id="221">1</td>
+        <td data-id="222">(N + 2^1) mod 2^160</td>
+        <td data-id="223">N+2（距离 2）</td>
+        <td data-id="224">覆盖约 1/2^159 的 ID 空间</td>
+    </tr>
+    <tr data-id="225">
+        <td data-id="226">79</td>
+        <td data-id="227">(N + 2^79) mod 2^160</td>
+        <td data-id="228">N + 2^79（中间位置）</td>
+        <td data-id="229">覆盖约一半 ID 空间，最大跳跃中间条目</td>
+    </tr>
+    <tr data-id="230">
+        <td data-id="231">158</td>
+        <td data-id="232">(N + 2^158) mod 2^160</td>
+        <td data-id="233">N + 2^158</td>
+        <td data-id="234">覆盖约 1/4 ID 空间</td>
+    </tr>
+    <tr data-id="235">
+        <td data-id="236">159</td>
+        <td data-id="237">(N + 2^159) mod 2^160</td>
+        <td data-id="238">N + 2^159（对角节点）</td>
+        <td data-id="239">覆盖约 1/2 ID 空间，最大跳跃条目</td>
+    </tr>
+</table>
+
+<p data-id="240"><strong data-id="241">路由时使用手指表的方式</strong>：在 <code data-id="242">find_successor(id)</code> 中，若目标 id 不在本节点与直接后继之间，则从 <code data-id="243">finger[159]</code> 开始倒序遍历，找到满足 <code data-id="244">finger[i].node.id ∈ (self.id, id)</code> 的最大 i，将请求转发给该节点。这样每一跳都能将剩余距离缩小约一半。</p>
+
+<div data-id="245" class="callout callout-note">
+    <div data-id="246" class="callout-label">说明</div>
+    <p data-id="247" style="margin-bottom:0;">手指表的第 0 个条目（finger[0].node）始终等于本节点的直接后继（successor），因为 finger[0].start 是比自身 ID 大 1 的位置，其后继正是自身的直接后继节点。</p>
+</div>
+
+<h2 data-id="248">2.3 后继列表（Successor List）</h2>
+
+<p data-id="249">后继列表（Successor List）是 Chord 协议中用于增强容错性的关键结构。尽管每个节点在逻辑上只有一个直接后继，但当该后继节点意外崩溃时，若没有备份后继信息，路由链将断裂。后继列表通过维护多个连续后继节点解决这一问题。</p>
+
+<p data-id="250"><strong data-id="251">本系统参数</strong>：后继列表长度 r = 3，即每个节点维护直接后继之后的 3 个节点的信息。</p>
+
+<p data-id="252"><strong data-id="253">更新机制</strong>：在每次 stabilize 周期中，节点 N 从其直接后继 S 获取 S 的后继列表，然后按以下方式构造自己的新后继列表：</p>
+
+<ol data-id="254">
+    <li data-id="255">取 S 的后继列表的前 r-1 = 2 个节点</li>
+    <li data-id="256">将 S 本身放在列表首位</li>
+    <li data-id="257">合并得到 N 的新后继列表：<code data-id="258">[S, S.successor_list[0], S.successor_list[1]]</code></li>
+</ol>
+
+<p data-id="259"><strong data-id="260">故障切换</strong>：当 stabilize 发现直接后继 S 无响应时，立即将 <code data-id="261">successor_list[1]</code> 作为新的直接后继，无需等待超时重试，有效避免了环断裂。</p>
+
+<p data-id="262"><strong data-id="263">去重与验证</strong>：更新后继列表时，需去除其中与自身 ID 相同的节点，并对每个候选节点发送 ping 验证其存活状态（可以异步进行，不阻塞主维护流程）。</p>
+
+<h2 data-id="264">2.4 前驱节点（Predecessor）</h2>
+
+<p data-id="265">每个节点维护一个指向其直接前驱节点（Predecessor）的引用。前驱节点是环上 ID 比自身小且最近的节点（考虑环绕），即满足 <code data-id="266">predecessor.id ∈ (前驱的前驱, self.id)</code> 的唯一节点。</p>
+
+<p data-id="267"><strong data-id="268">用途</strong>：前驱节点用于 stabilize 协议中判断是否有新节点插入，以及 notify 协议中更新前驱关系。</p>
+
+<p data-id="269"><strong data-id="270">predecessor 为 None 的情况</strong>：节点在以下情况下 predecessor 为 None：</p>
+<ul data-id="271">
+    <li data-id="272">节点刚刚加入网络，尚未被任何节点通过 notify 建立前驱关系</li>
+    <li data-id="273">节点执行 check_predecessor 发现前驱无响应，主动将前驱清空</li>
+    <li data-id="274">网络中只有一个节点时（单节点环）</li>
+</ul>
+
+<p data-id="275"><strong data-id="276">处理规则</strong>：当 predecessor 为 None 时，stabilize 协议的 notify 调用允许任何节点成为自己的前驱（因为无现有前驱可比较）。这是新节点加入后快速建立邻居关系的机制。</p>
+
+<h2 data-id="277">2.5 节点信息对象（NodeInfo Schema）</h2>
+
+<p data-id="278">系统中所有 API 交互使用统一的节点描述对象（NodeInfo），定义如下：</p>
+
+<pre data-id="279">{
+  "node_id":   "a94a8fe5ccb19ba61c4c0873d391e987982fbbd3",  // 40 位十六进制字符串，SHA-1(uri) 的结果
+  "uri":       "https://node1.example.com",                 // 节点的 HTTPS URI（规范化，小写，无尾部斜杠）
+  "status":    "ACTIVE",                                    // 节点状态（见 3.3 节）
+  "joined_at": "2026-05-27T12:00:00Z"                       // 加入网络的时间（ISO 8601 UTC）
+}</pre>
+
+<table data-id="280">
+    <tr data-id="281">
+        <th data-id="282">字段</th>
+        <th data-id="283">类型</th>
+        <th data-id="284">必填</th>
+        <th data-id="285">说明</th>
+    </tr>
+    <tr data-id="286">
+        <td data-id="287"><code data-id="288">node_id</code></td>
+        <td data-id="289">string</td>
+        <td data-id="290">是</td>
+        <td data-id="291">40 位十六进制字符串，SHA-1(uri) 的结果</td>
+    </tr>
+    <tr data-id="292">
+        <td data-id="293"><code data-id="294">uri</code></td>
+        <td data-id="295">string</td>
+        <td data-id="296">是</td>
+        <td data-id="297">节点的完整 HTTPS URI，格式为 <code>https://hostname</code>（或 <code>https://hostname:port</code> 若非 443 端口）。用于计算 node_id 并对外通告，必须规范化：scheme 和 host 均小写，去除尾部斜杠</td>
+    </tr>
+    <tr data-id="304">
+        <td data-id="305"><code data-id="306">status</code></td>
+        <td data-id="307">string</td>
+        <td data-id="308">是</td>
+        <td data-id="309">INITIALIZING / JOINING / ACTIVE / LEAVING / ISOLATED</td>
+    </tr>
+    <tr data-id="310">
+        <td data-id="311"><code data-id="312">joined_at</code></td>
+        <td data-id="313">string</td>
+        <td data-id="314">否</td>
+        <td data-id="315">节点成功完成 join 流程的时间戳（ISO 8601 UTC）</td>
+    </tr>
+    <tr data-id="316">
+        <td data-id="317"><code data-id="318">last_seen</code></td>
+        <td data-id="319">string</td>
+        <td data-id="320">否</td>
+        <td data-id="321">Tracker 记录该节点最后一次心跳的时间（仅 Tracker 使用）</td>
+    </tr>
+</table>
+
+<p data-id="322">在节点间的路由 API 中（如 find_successor 响应、notify 请求等），NodeInfo 对象通常只包含 <code data-id="323">node_id</code> 和 <code data-id="324">uri</code> 两个核心字段，<code data-id="326">status</code> 和 <code data-id="327">joined_at</code> 为可选附加字段。</p>
+
+
+<!-- ==================== 第三章 ==================== -->
+<hr data-id="328" class="chapter-divider">
+<div data-id="329" class="chapter-label">第三章</div>
+<h1 data-id="330">系统架构</h1>
+
+<h2 data-id="331">3.1 整体架构描述</h2>
+
+<p data-id="332">本系统由两类组件构成：可选的中心化 <strong data-id="333">Tracker 服务</strong>，以及多个完全去中心化的 <strong data-id="334">Node 服务</strong>。两者通过 RESTful HTTP 通信，Tracker 仅在节点引导（bootstrap）阶段发挥作用，DHT 路由网络的正常运行完全不依赖 Tracker。</p>
+
+<p data-id="335"><strong data-id="336">Tracker 服务</strong>：单一的中心化服务，负责维护一份已知活跃节点的名册，供新节点加入时获取初始连接点（seed 节点）。Tracker 不参与任何路由决策，不存储路由信息，也不对节点状态进行主动探测——它仅被动接收节点的注册和心跳上报，并提供全局健康统计接口供监控面板调用。</p>
+
+<p data-id="337"><strong data-id="338">Node 服务（DHT 节点）</strong>：每个节点都是对等的（P2P），运行相同的协议实现。节点之间通过 RESTful HTTP 直接通信，不经过 Tracker 中转。每个节点独立维护自己的手指表、后继列表和前驱信息，并通过周期性维护任务保持路由表的准确性。</p>
+
+<p data-id="339"><strong data-id="340">网络自洽性的保证</strong>：Tracker 下线后，现有节点完全不受影响，原因如下：</p>
+<ul data-id="341">
+    <li data-id="342">每个节点维护 r=3 个后继节点的备份，即使直接后继崩溃也能从列表中恢复</li>
+    <li data-id="343">stabilize 协议每分钟运行一次，持续修复因节点加入/离开导致的路由不一致</li>
+    <li data-id="344">check_predecessor 每分钟检测前驱存活，及时清空失效前驱以接受新的前驱关系</li>
+    <li data-id="345">fix_fingers 轮转修复手指表，确保路由效率在 O(log N) 级别</li>
+</ul>
+
+<p data-id="346"><strong data-id="347">新节点加入流程概述</strong>：新节点启动后，首先向 Tracker 请求 seed 节点列表，然后选择一个 seed 节点作为"引路人"，发起 find_successor 请求定位自己在环上的位置，完成初始化后通过 notify 协议向邻居节点通报自己的存在。</p>
+
+<h2 data-id="348">3.2 节点内部模块</h2>
+
+<p data-id="349">每个 Node 服务在内部由以下四个模块组成，模块间通过内部函数调用交互，对外只暴露 HTTP API：</p>
+
+<table data-id="350">
+    <tr data-id="351">
+        <th data-id="352">模块编号</th>
+        <th data-id="353">模块名称</th>
+        <th data-id="354">职责描述</th>
+    </tr>
+    <tr data-id="355">
+        <td data-id="356">1</td>
+        <td data-id="357"><strong data-id="358">HTTP Server</strong></td>
+        <td data-id="359">监听本节点的 HTTP 端口，接受来自其他节点的路由请求（find_successor、notify、join 等）和维护请求（ping、predecessor 查询等）。负责解析请求体、调用 Chord 状态机的对应方法，并序列化响应。</td>
+    </tr>
+    <tr data-id="360">
+        <td data-id="361">2</td>
+        <td data-id="362"><strong data-id="363">Chord 状态机</strong></td>
+        <td data-id="364">维护节点的核心 Chord 状态：<code data-id="365">node_id</code>、<code data-id="366">predecessor</code>、<code data-id="367">finger_table[0..159]</code>、<code data-id="368">successor_list[0..2]</code>、<code data-id="369">status</code>。实现所有 Chord 协议算法（find_successor、closest_preceding_node、notify 逻辑等）。状态的读写需注意并发安全（使用读写锁）。</td>
+    </tr>
+    <tr data-id="370">
+        <td data-id="371">3</td>
+        <td data-id="372"><strong data-id="373">周期任务调度器</strong></td>
+        <td data-id="374">每 60 秒触发一轮维护任务，按序执行：check_predecessor → stabilize → fix_fingers → health_check_ring → report_to_tracker。调度器应确保同一时刻只有一个维护轮次在运行，避免并发维护导致状态混乱。</td>
+    </tr>
+    <tr data-id="375">
+        <td data-id="376">4</td>
+        <td data-id="377"><strong data-id="378">Tracker 客户端（可选）</strong></td>
+        <td data-id="379">负责向 Tracker 注册自身、发送心跳、上报状态统计，以及在 join 阶段获取 seed 节点列表。该模块完全可选：若未配置 Tracker 地址，则跳过所有与 Tracker 交互的步骤，依靠手动配置的 seed 节点完成 bootstrap。</td>
+    </tr>
+</table>
+
+<h2 data-id="380">3.3 节点生命周期状态机</h2>
+
+<p data-id="381">每个节点在其运行生命周期内经历以下五种状态。状态的变迁由节点自身的运行逻辑驱动，不存在外部的状态控制器：</p>
+
+<table data-id="382">
+    <tr data-id="383">
+        <th data-id="384">状态名称</th>
+        <th data-id="385">含义</th>
+        <th data-id="386">此时节点行为</th>
+    </tr>
+    <tr data-id="387">
+        <td data-id="388"><strong data-id="389">INITIALIZING</strong></td>
+        <td data-id="390">节点启动，正在执行初始化</td>
+        <td data-id="391">计算自身 node_id，初始化数据结构（finger_table 全指向自身，predecessor=None，successor=self），尚未对外提供服务</td>
+    </tr>
+    <tr data-id="392">
+        <td data-id="393"><strong data-id="394">JOINING</strong></td>
+        <td data-id="395">正在执行 join 流程</td>
+        <td data-id="396">向 seed 节点发起 find_successor，设置初始 successor 和 successor_list，向 successor 发送 notify。此时不响应其他节点的路由请求</td>
+    </tr>
+    <tr data-id="397">
+        <td data-id="398"><strong data-id="399">ACTIVE</strong></td>
+        <td data-id="400">正常运行状态</td>
+        <td data-id="401">完整响应所有 API 请求，参与路由转发，执行周期维护任务，向 Tracker 发送心跳</td>
+    </tr>
+    <tr data-id="402">
+        <td data-id="403"><strong data-id="404">LEAVING</strong></td>
+        <td data-id="405">主动离网，正在执行 graceful leave</td>
+        <td data-id="406">拒绝新的路由请求（返回 503 NODE_LEAVING），正在通知邻居节点并向 Tracker 注销</td>
+    </tr>
+    <tr data-id="407">
+        <td data-id="408"><strong data-id="409">ISOLATED</strong></td>
+        <td data-id="410">孤立状态，无法联系任何邻居</td>
+        <td data-id="411">停止路由服务（find_successor 返回 503），继续响应 ping 和 identity 请求，持续尝试通过 Tracker 或其他途径重新加入网络</td>
+    </tr>
+</table>
+
+<p data-id="412">状态转移规则如下表所示：</p>
+
+<table data-id="413">
+    <tr data-id="414">
+        <th data-id="415">当前状态</th>
+        <th data-id="416">触发事件</th>
+        <th data-id="417">下一状态</th>
+        <th data-id="418">说明</th>
+    </tr>
+    <tr data-id="419">
+        <td data-id="420">INITIALIZING</td>
+        <td data-id="421">初始化完成，开始 join 流程</td>
+        <td data-id="422">JOINING</td>
+        <td data-id="423">无论有无 seed 节点均进入此状态</td>
+    </tr>
+    <tr data-id="424">
+        <td data-id="425">JOINING</td>
+        <td data-id="426">join 流程成功完成（notify 已发送）</td>
+        <td data-id="427">ACTIVE</td>
+        <td data-id="428">正常启动路径</td>
+    </tr>
+    <tr data-id="429">
+        <td data-id="430">JOINING</td>
+        <td data-id="431">所有 seed 节点均不可达</td>
+        <td data-id="432">ACTIVE（单节点环）</td>
+        <td data-id="433">N 自成环，等待其他节点加入</td>
+    </tr>
+    <tr data-id="434">
+        <td data-id="435">ACTIVE</td>
+        <td data-id="436">收到用户/系统的关闭信号</td>
+        <td data-id="437">LEAVING</td>
+        <td data-id="438">触发 graceful leave 流程</td>
+    </tr>
+    <tr data-id="439">
+        <td data-id="440">ACTIVE</td>
+        <td data-id="441">successor_list 中所有节点均无响应</td>
+        <td data-id="442">ISOLATED</td>
+        <td data-id="443">维护周期中检测到环断裂</td>
+    </tr>
+    <tr data-id="444">
+        <td data-id="445">LEAVING</td>
+        <td data-id="446">graceful leave 流程完成</td>
+        <td data-id="447">—（进程退出）</td>
+        <td data-id="448">节点停止 HTTP 服务并退出</td>
+    </tr>
+    <tr data-id="449">
+        <td data-id="450">ISOLATED</td>
+        <td data-id="451">成功联系到任意其他节点</td>
+        <td data-id="452">JOINING</td>
+        <td data-id="453">执行完整 join 流程重新加入</td>
+    </tr>
+    <tr data-id="454">
+        <td data-id="455">ISOLATED</td>
+        <td data-id="456">收到用户/系统的关闭信号</td>
+        <td data-id="457">—（进程退出）</td>
+        <td data-id="458">跳过 graceful leave，直接退出</td>
+    </tr>
+</table>
+
+<h2 data-id="459">3.4 Tracker 的角色与限制</h2>
+
+<p data-id="460">Tracker 在本系统中是一个轻量级的可选辅助组件，其职责和限制需清晰理解，以避免对系统行为产生误解：</p>
+
+<p data-id="461"><strong data-id="462">Tracker 存储的数据</strong>：Tracker 维护一份已知节点的记录表，每条记录包含节点的 NodeInfo 以及最后汇报时间（last_seen）。Tracker 存储的最大节点数可配置（默认 1000），超过上限时淘汰最久未活跃的节点。</p>
+
+<p data-id="463"><strong data-id="464">Tracker 不做的事情</strong>：Tracker 不存储任何路由信息（手指表、后继列表），不参与任何 find_successor 查找，不主动探测节点存活状态（仅依赖节点的 heartbeat 上报）。</p>
+
+<p data-id="465"><strong data-id="466">Tracker 提供的服务</strong>：</p>
+<ul data-id="467">
+    <li data-id="468">Bootstrap 服务：随机返回 k 个已知活跃节点作为新节点的 seed（倾向于选择 last_seen 时间最近的节点）</li>
+    <li data-id="469">全局健康统计：汇总所有节点的状态分布、手指表覆盖率、节点存活时长等指标，供监控面板调用</li>
+    <li data-id="470">节点注册与注销：记录节点的加入和主动离网事件</li>
+</ul>
+
+<p data-id="471"><strong data-id="472">Tracker 下线后的影响</strong>：</p>
+<ul data-id="473">
+    <li data-id="474">对现有 ACTIVE 节点：<strong data-id="475">无影响</strong>。节点的 report_to_tracker 任务会静默失败，不影响 stabilize 和 fix_fingers 的执行。</li>
+    <li data-id="476">对新加入节点：<strong data-id="477">无法通过 Tracker 获取 seed 节点</strong>，必须通过手动配置的 seed 节点 URI（直接指定任意已知节点的 https://hostname）进行 bootstrap。</li>
+    <li data-id="478">对监控面板：无法获取全局健康统计，但可以直接查询各节点的 <code data-id="479">/chord/state</code> 接口获取本地状态。</li>
+</ul>
+
+
+<!-- ==================== 第四章 ==================== -->
+<hr data-id="480" class="chapter-divider">
+<div data-id="481" class="chapter-label">第四章</div>
+<h1 data-id="482">核心算法详述</h1>
+
+<h2 data-id="483">4.1 加入网络（Join）</h2>
+
+<p data-id="484">节点 N 加入 Chord 网络的完整流程分为以下步骤：</p>
+
+<div data-id="485" class="step-block">
+<p data-id="486"><strong data-id="487">步骤 1</strong>：节点 N 启动，计算 <code data-id="488">node_id = SHA1(uri)（对节点 URI 规范化后执行 SHA-1）</code>，将结果转换为 40 位十六进制字符串。初始化内部状态：<code data-id="489">finger_table</code> 全部指向自身，<code data-id="490">predecessor = None</code>，<code data-id="491">successor = self</code>，<code data-id="492">successor_list = [self]</code>，<code data-id="493">status = INITIALIZING</code>。</p>
+
+<p data-id="494"><strong data-id="495">步骤 2</strong>：若配置了 Tracker 地址，N 向 Tracker 请求 k=5 个 seed 节点（<code data-id="496">GET /tracker/nodes/seeds?count=5&amp;exclude={N.id}</code>）。若未配置 Tracker，则使用手动配置的 seed 节点列表。</p>
+
+<p data-id="497"><strong data-id="498">步骤 3（无 seed 节点——N 是网络中第一个节点）</strong>：N 自成单节点环，<code data-id="499">finger_table</code> 全部指向自身，<code data-id="500">predecessor = None</code>，<code data-id="501">successor = self</code>，<code data-id="502">successor_list = [self]</code>，状态直接切换为 ACTIVE。向 Tracker 注册（如有）。等待其他节点加入。</p>
+
+<p data-id="503"><strong data-id="504">步骤 4（有 seed 节点 S）</strong>：N 状态切换为 JOINING，依次执行：</p>
+<ul data-id="505">
+    <li data-id="506"><strong data-id="507">步骤 4a</strong>：N 向 S 发起 <code data-id="508">POST /chord/join</code>（传入 N 的 NodeInfo），S 内部调用 <code data-id="509">find_successor(N.id)</code>，返回 N 的初始 successor（记为 S'）及其 successor_list。</li>
+    <li data-id="510"><strong data-id="511">步骤 4b</strong>：N 设置 <code data-id="512">successor = S'</code>，<code data-id="513">predecessor = None</code>。</li>
+    <li data-id="514"><strong data-id="515">步骤 4c</strong>：N 使用 S' 返回的 successor_list 初始化自己的 successor_list（取前 r=3 个）。</li>
+    <li data-id="516"><strong data-id="517">步骤 4d</strong>：N 向 S' 发送 <code data-id="518">POST /chord/notify</code>（通知 S'：N 可能是你的前驱）。</li>
+    <li data-id="519"><strong data-id="520">步骤 4e</strong>：N 状态切换为 ACTIVE，开始响应外部请求，启动周期维护调度器。</li>
+    <li data-id="521"><strong data-id="522">步骤 4f</strong>：N 向 Tracker 注册（<code data-id="523">POST /tracker/nodes</code>，如有 Tracker）。</li>
+</ul>
+
+<p data-id="524"><strong data-id="525">步骤 5（边缘情况：超时处理）</strong>：若步骤 4a 中 S 超时或返回错误，N 依次尝试 seed 列表中的下一个节点 S2、S3……直至成功或列表耗尽。若所有 seed 均失败，N 退化为单节点环（步骤 3 的逻辑）。</p>
+</div>
+
+<h2 data-id="526">4.2 查找后继（find_successor）</h2>
+
+<p data-id="527">find_successor 是 Chord 路由的核心操作。本系统采用<strong data-id="528">迭代模式</strong>（Iterative Lookup），而非递归模式，原因是迭代模式避免了 HTTP 调用链的深度嵌套，调用方自行维护跳转状态，使路由过程更易于调试和追踪。</p>
+
+<p data-id="529"><strong data-id="530">迭代模式的工作原理</strong>：发起方（通常是 join 中的新节点或需要路由的节点）向第一个候选节点发起 find_successor 请求。若该节点知道答案，直接返回 <code data-id="531">found: true</code> 和结果；若不知道，返回 <code data-id="532">found: false</code> 和下一跳（<code data-id="533">next_hop</code>）节点信息。发起方收到 next_hop 后，向 next_hop 节点再次发起请求，如此循环，直到 <code data-id="534">found: true</code> 或超过 max_hops。</p>
+
+<p data-id="535"><strong data-id="536">单节点执行逻辑</strong>（收到 find_successor(id) 请求时）：</p>
+
+<ol data-id="537">
+    <li data-id="538">检查 <code data-id="539">hop_count &gt;= max_hops（161）</code>：若超过，返回 503 MAX_HOPS_EXCEEDED。</li>
+    <li data-id="540">检查 visited_nodes 是否包含自身 ID：若是，说明出现循环，返回错误。</li>
+    <li data-id="541">检查 <code data-id="542">id ∈ (self.id, self.successor.id]</code>：若是，直接返回 <code data-id="543">{found: true, successor: self.successor}</code>。</li>
+    <li data-id="544">否则，调用 <code data-id="545">closest_preceding_node(id)</code> 找到最接近 id 的候选节点 F。</li>
+    <li data-id="546">若 F == self（无更好的候选）：返回 <code data-id="547">{found: true, successor: self.successor}</code>（退化返回）。</li>
+    <li data-id="548">否则：返回 <code data-id="549">{found: false, next_hop: F, hop_count: hop_count + 1}</code>。</li>
+</ol>
+
+<div data-id="550" class="callout callout-important">
+    <div data-id="551" class="callout-label">重要：迭代模式的关键区别</div>
+    <p data-id="552" style="margin-bottom:0;">在迭代模式下，节点收到 find_successor 请求后，<strong data-id="553">绝对不会自己去调用 next_hop 节点</strong>，而是直接将 next_hop 返回给调用方。这与递归模式的根本区别在于：调用链的控制权始终在发起方，HTTP 调用深度永远为 1，而非 O(log N) 层嵌套。</p>
+</div>
+
+<h2 data-id="554">4.3 最近前驱（closest_preceding_node）</h2>
+
+<p data-id="555">closest_preceding_node(id) 用于在本地路由表中找到最适合转发 find_successor(id) 请求的候选节点，即环上位于 <code data-id="556">(self.id, id)</code> 之间、距 id 最近的已知节点。</p>
+
+<p data-id="557"><strong data-id="558">搜索顺序</strong>：</p>
+<ol data-id="559">
+    <li data-id="560">从手指表最高位 <code data-id="561">finger[159]</code> 开始，倒序遍历到 <code data-id="562">finger[0]</code>。</li>
+    <li data-id="563">对每个条目，检查 <code data-id="564">finger[i].node.id ∈ (self.id, id)</code>，且该节点状态不为 failed。</li>
+    <li data-id="565">找到第一个满足条件的条目，返回 <code data-id="566">finger[i].node</code>。</li>
+    <li data-id="567">若手指表中无合适候选，遍历后继列表（successor_list），同样倒序检查。</li>
+    <li data-id="568">若仍无候选，返回 self（发起方将退化为线性前进）。</li>
+</ol>
+
+<p data-id="569"><strong data-id="570">后继列表的补充作用</strong>：后继列表中的节点在环上比手指表更靠近自身，能补充手指表在短距离上的精度盲区（尤其在手指表条目尚未全部修复时）。先查手指表再查后继列表，能在两种数据源之间取得最优的跳跃选择。</p>
+
+<h2 data-id="571">4.4 稳定化协议（Stabilize）</h2>
+
+<p data-id="572">Stabilize 是 Chord 网络自愈能力的核心机制，每 60 秒由调度器触发一次，执行以下步骤：</p>
+
+<ol data-id="573">
+    <li data-id="574">向当前 <code data-id="575">successor</code> 发送 <code data-id="576">GET /chord/predecessor</code>，获取 successor 的前驱节点（记为 x）。</li>
+    <li data-id="577">若 x ≠ None 且 <code data-id="578">x.id ∈ (self.id, successor.id)</code>：说明有新节点 x 已插入自己与 successor 之间，更新 <code data-id="579">successor = x</code>。这是 stabilize 发现并接纳新邻居的关键步骤。</li>
+    <li data-id="580">向（可能已更新的）<code data-id="581">successor</code> 发送 <code data-id="582">POST /chord/notify(self)</code>，让 successor 更新其 predecessor 关系。</li>
+    <li data-id="583">向 <code data-id="584">successor</code> 发送 <code data-id="585">GET /chord/successor_list</code>，获取其后继列表，更新自己的 successor_list（取 successor 的前 r-1 个后继，加上 successor 自身）。</li>
+    <li data-id="586">若步骤 1 的请求中 successor 无响应（超时或错误）：从 <code data-id="587">successor_list</code> 中取下一个节点作为新的 successor，重复步骤 1-4。若 successor_list 也全部无响应，则节点切换为 ISOLATED 状态。</li>
+</ol>
+
+<h2 data-id="588">4.5 通知协议（Notify）</h2>
+
+<p data-id="589">Notify 是 stabilize 协议的配套操作：节点 N 向其 successor 发送 notify，告知"我可能是你的前驱"。接收方（设为节点 M）执行以下逻辑：</p>
+
+<ul data-id="590">
+    <li data-id="591">若 <code data-id="592">M.predecessor == None</code>：无条件接受，设置 <code data-id="593">predecessor = N</code>，返回 <code data-id="594">{accepted: true}</code>。</li>
+    <li data-id="595">若 <code data-id="596">N.id ∈ (M.predecessor.id, M.id)</code>：N 比现有前驱更近，更新 <code data-id="597">predecessor = N</code>，返回 <code data-id="598">{accepted: true}</code>。</li>
+    <li data-id="599">否则：N 不在合法前驱范围内（可能是过期消息或并发 notify），忽略，返回 <code data-id="600">{accepted: false}</code>，predecessor 不变。</li>
+</ul>
+
+<p data-id="601">Notify 是<strong data-id="602">幂等</strong>的：对同一节点多次 notify 不会产生副作用。这是 Chord 协议容忍并发操作的重要基础。</p>
+
+<h2 data-id="603">4.6 手指表修复（fix_fingers）</h2>
+
+<p data-id="604">fix_fingers 确保手指表中的条目保持准确，使路由效率维持在 O(log N) 级别。与 stabilize 不同，fix_fingers 采用<strong data-id="605">轮转修复策略</strong>：每次维护周期只修复一个条目，而非全部 160 个。</p>
+
+<p data-id="606"><strong data-id="607">执行步骤</strong>：</p>
+<ol data-id="608">
+    <li data-id="609">读取当前的 <code data-id="610">next_finger_index</code>（初始为 0，每次执行后递增，到 159 后回绕为 0）。</li>
+    <li data-id="611">计算 <code data-id="612">finger[next_finger_index].start = (self.id + 2^next_finger_index) mod 2^160</code>。</li>
+    <li data-id="613">对该 start 值执行 <code data-id="614">find_successor(start)</code>（迭代模式，通过现有路由表发起请求）。</li>
+    <li data-id="615">将查找结果更新到 <code data-id="616">finger[next_finger_index].node</code>，状态标记为 ok。</li>
+    <li data-id="617">递增 <code data-id="618">next_finger_index</code>，供下一次维护周期使用。</li>
+</ol>
+
+<div data-id="619" class="callout callout-note">
+    <div data-id="620" class="callout-label">为什么不一次修复全部 160 个条目？</div>
+    <p data-id="621" style="margin-bottom:0;">若每分钟修复全部 160 个手指表条目，一个有 N 个节点的网络每分钟将产生 N × 160 次 find_successor 请求，在节点较多时会形成显著的网络放大效应。轮转策略每分钟每节点只发起 1 次 find_successor，手指表在 160 分钟（约 2.7 小时）内完整刷新一轮，在学习场景下完全可接受。</p>
+</div>
+
+<h2 data-id="622">4.7 前驱检查（check_predecessor）</h2>
+
+<p data-id="623">check_predecessor 在每个维护周期的最开始执行（先于 stabilize），目的是及时清空失效的前驱节点，为 stabilize 中的 notify 逻辑准备好正确的状态：</p>
+
+<ol data-id="624">
+    <li data-id="625">若 <code data-id="626">predecessor == None</code>：直接跳过（无需检查）。</li>
+    <li data-id="627">向 <code data-id="628">predecessor</code> 发送 <code data-id="629">GET /chord/ping</code>。</li>
+    <li data-id="630">若 5 秒内收到正常响应：前驱存活，无操作。</li>
+    <li data-id="631">若超时或返回错误：将 <code data-id="632">predecessor</code> 设置为 None。下一次 stabilize 执行时，若有新的合法节点通过 notify 请求加入，可以无阻碍地成为新前驱。</li>
+</ol>
+
+<h2 data-id="633">4.8 主动离网（Graceful Leave）</h2>
+
+<p data-id="634">当节点 N 收到关闭信号时，应尽可能地通知邻居节点以减少拓扑修复的延迟，而非直接崩溃退出：</p>
+
+<ol data-id="635">
+    <li data-id="636">N 状态切换为 LEAVING，停止接受新的路由请求（返回 503 NODE_LEAVING）。</li>
+    <li data-id="637">N 向 <code data-id="638">successor (A)</code> 发送 <code data-id="639">POST /chord/leave</code>（<code data-id="640">role: "predecessor_leaving"</code>，<code data-id="641">new_predecessor: N.predecessor</code>），通知 A 其前驱已变更为 N 的前驱节点 P。A 收到后立即更新 predecessor 并触发一次提前的 stabilize。</li>
+    <li data-id="642">N 向 <code data-id="643">predecessor (P)</code> 发送 <code data-id="644">POST /chord/leave</code>（<code data-id="645">role: "successor_leaving"</code>，<code data-id="646">new_successor: A</code>），通知 P 其后继已变更为 A。P 收到后立即更新 successor 并触发一次提前的 stabilize。</li>
+    <li data-id="647">N 向 Tracker 发送 <code data-id="648">DELETE /tracker/nodes/{N.id}</code> 注销（若有 Tracker）。</li>
+    <li data-id="649">N 停止 HTTP 服务，进程退出。</li>
+</ol>
+
+<div data-id="650" class="callout callout-note">
+    <div data-id="651" class="callout-label">容错说明</div>
+    <p data-id="652" style="margin-bottom:0;">即使步骤 2 或步骤 3 因网络问题失败，Chord 协议的自愈机制也能在下一个维护周期（60 秒内）自动修复拓扑：successor 的 check_predecessor 会发现前驱失效并清空，stabilize 会发现新的合法前驱。Graceful Leave 的意义在于将修复时间从约 2 分钟缩短到几秒。</p>
+</div>
+
+
+<!-- ==================== 第五章 ==================== -->
+<hr data-id="653" class="chapter-divider">
+<div data-id="654" class="chapter-label">第五章</div>
+<h1 data-id="655">周期维护任务</h1>
+
+<h2 data-id="656">5.1 任务调度总览</h2>
+
+<p data-id="657">每个 ACTIVE 节点每 60 秒执行一轮完整的维护任务，任务按固定顺序串行执行，确保状态更新的一致性。以下是每轮维护的完整任务清单：</p>
+
+<table data-id="658">
+    <tr data-id="659">
+        <th data-id="660">顺序</th>
+        <th data-id="661">任务名称</th>
+        <th data-id="662">说明</th>
+        <th data-id="663">预期耗时</th>
+        <th data-id="664">依赖关系</th>
+    </tr>
+    <tr data-id="665">
+        <td data-id="666">1</td>
+        <td data-id="667"><strong data-id="668">check_predecessor</strong></td>
+        <td data-id="669">Ping 前驱节点，若无响应则将 predecessor 置为 None，为后续 notify 清理障碍</td>
+        <td data-id="670">&lt; 5 秒</td>
+        <td data-id="671">无（首位执行）</td>
+    </tr>
+    <tr data-id="672">
+        <td data-id="673">2</td>
+        <td data-id="674"><strong data-id="675">stabilize</strong></td>
+        <td data-id="676">询问 successor 的前驱、更新 successor、发送 notify、刷新 successor_list</td>
+        <td data-id="677">&lt; 10 秒</td>
+        <td data-id="678">需在 check_predecessor 之后执行</td>
+    </tr>
+    <tr data-id="679">
+        <td data-id="680">3</td>
+        <td data-id="681"><strong data-id="682">fix_fingers</strong></td>
+        <td data-id="683">轮转修复当前 next_finger_index 位置的手指表条目（每轮仅修复一个）</td>
+        <td data-id="684">&lt; 5 秒</td>
+        <td data-id="685">需要有效的 successor 信息</td>
+    </tr>
+    <tr data-id="686">
+        <td data-id="687">4</td>
+        <td data-id="688"><strong data-id="689">health_check_ring</strong></td>
+        <td data-id="690">对 successor_list 中的所有节点（最多 3 个）发送 ping，更新其存活状态标记</td>
+        <td data-id="691">&lt; 15 秒</td>
+        <td data-id="692">可并行化执行（3 个 ping 同时发出）</td>
+    </tr>
+    <tr data-id="693">
+        <td data-id="694">5</td>
+        <td data-id="695"><strong data-id="696">report_to_tracker</strong></td>
+        <td data-id="697">向 Tracker 发送 heartbeat，上报本节点状态和统计信息（Tracker 不可达时静默跳过）</td>
+        <td data-id="698">&lt; 5 秒</td>
+        <td data-id="699">完全可选，失败不影响其他任务</td>
+    </tr>
+</table>
+
+<p data-id="700">每轮维护的最大预期总耗时：约 30-40 秒（任务 4 的三个 ping 并行时）。调度器在上一轮完成后等待剩余时间（60 - 实际耗时），确保维护周期大致为 60 秒。</p>
+
+<h2 data-id="701">5.2 超时与重试策略</h2>
+
+<p data-id="702">网络请求的超时和失败处理策略直接影响系统对节点失效的检测速度和准确性。本系统采用以下策略：</p>
+
+<table data-id="703">
+    <tr data-id="704">
+        <th data-id="705">场景</th>
+        <th data-id="706">策略</th>
+        <th data-id="707">说明</th>
+    </tr>
+    <tr data-id="708">
+        <td data-id="709">单次 HTTP 请求超时</td>
+        <td data-id="710">5 秒硬超时</td>
+        <td data-id="711">超过 5 秒未响应，视为本次请求失败</td>
+    </tr>
+    <tr data-id="712">
+        <td data-id="713">第 1 次请求失败</td>
+        <td data-id="714">标记为 suspicious</td>
+        <td data-id="715">节点可能临时高负载或网络抖动，降低路由优先级但不移除</td>
+    </tr>
+    <tr data-id="716">
+        <td data-id="717">连续 3 次请求失败</td>
+        <td data-id="718">标记为 failed</td>
+        <td data-id="719">从手指表和后继列表中移除，不再向其发送路由请求</td>
+    </tr>
+    <tr data-id="720">
+        <td data-id="721">suspicious 节点</td>
+        <td data-id="722">路由中降低优先级</td>
+        <td data-id="723">closest_preceding_node 中优先选择 ok 状态的节点，suspicious 节点作为备选</td>
+    </tr>
+    <tr data-id="724">
+        <td data-id="725">failed 节点</td>
+        <td data-id="726">从路由表移除</td>
+        <td data-id="727">从手指表条目和后继列表中删除，下次 fix_fingers 会用新节点填充</td>
+    </tr>
+    <tr data-id="728">
+        <td data-id="729">维护任务中的失败</td>
+        <td data-id="730">不重试，等待下一周期</td>
+        <td data-id="731">维护任务的设计假设是"最终一致"，单次失败不触发即时重试</td>
+    </tr>
+</table>
+
+<p data-id="732"><strong data-id="733">状态恢复</strong>：一个曾被标记为 suspicious 或 failed 的节点，若在后续的 fix_fingers 或 health_check_ring 中被成功 ping 通，其状态将重置为 ok。这处理了节点临时网络问题后恢复的场景。</p>
+
+<h2 data-id="734">5.3 ISOLATED 状态的处理</h2>
+
+<p data-id="735">当一个节点在 stabilize 过程中发现其 successor_list 中的所有节点均无响应时，该节点切换为 ISOLATED 状态，并按以下逻辑处理：</p>
+
+<ol data-id="736">
+    <li data-id="737">节点切换为 ISOLATED 状态，停止对外的路由服务（find_successor 接口返回 503 NODE_ISOLATED）。</li>
+    <li data-id="738">继续响应 <code data-id="739">/chord/ping</code> 和 <code data-id="740">/chord/identity</code> 请求（用于诊断和被其他节点发现）。</li>
+    <li data-id="741">每个维护周期尝试联系 Tracker，获取新的 seed 节点列表。</li>
+    <li data-id="742">若 Tracker 也不可达：节点自我降级为单节点环，predecessor = None，successor = self，等待手动干预或其他节点主动联系。</li>
+    <li data-id="743">一旦收到任意来自其他节点的 notify 请求，或成功通过 Tracker 获取到可达的 seed 节点：切换回 JOINING 状态，执行完整的 join 流程重新加入网络。</li>
+</ol>
+
+<div data-id="744" class="callout callout-warning">
+    <div data-id="745" class="callout-label">注意</div>
+    <p data-id="746" style="margin-bottom:0;">ISOLATED 节点不应主动拒绝 notify 请求——即使处于孤立状态，收到其他节点的 notify 也应正常处理，因为这可能是网络恢复后第一个"重连信号"。</p>
+</div>
+
+
+<!-- ==================== 第六章 ==================== -->
+<hr data-id="747" class="chapter-divider">
+<div data-id="748" class="chapter-label">第六章</div>
+<h1 data-id="749">边缘情况与处理策略</h1>
+
+<h2 data-id="750">6.1 并发加入（Concurrent Join）</h2>
+
+<p data-id="751"><strong data-id="752">问题描述</strong>：多个节点几乎同时加入网络时，它们可能都通过同一个 seed 节点执行 find_successor，并被分配到相邻的区间，导致 successor/predecessor 关系在短时间内出现不一致（例如：A 认为 B 是其 successor，同时 C 也插入在 A 和 B 之间但尚未被 A 发现）。</p>
+
+<p data-id="753"><strong data-id="754">处理方式</strong>：Chord 协议的设计天然支持并发加入，原因在于 stabilize 和 notify 是幂等的"最终一致"协议。在多个节点并发加入后的若干个维护周期内，stabilize 会逐步发现并纠正所有不一致的 successor/predecessor 关系。具体而言，每轮 stabilize 至少能修复一对邻居关系，经过 O(log N) 轮后网络达到稳定状态。<strong data-id="755">不需要分布式锁</strong>，因为 notify 的幂等性保证了重复执行不会引入新的错误状态。</p>
+
+<h2 data-id="756">6.2 节点 ID 碰撞</h2>
+
+<p data-id="757"><strong data-id="758">问题描述</strong>：两个不同的节点 URI 在极低概率下产生相同的 SHA-1 哈希值（2^160 空间内的随机碰撞）。</p>
+
+<p data-id="760"><strong data-id="761">处理方式</strong>：节点 N 在发起 join 请求时，seed 节点（或其路由到的目标 successor）会检查自身的 ID 是否与 N 相同。若发现碰撞，返回 409 ID_COLLISION 错误，N 记录错误日志并停止加入。实践中，SHA-1 在 160 位空间内的碰撞概率约为 <code data-id="762">1 / 2^160</code>，在学习场景下完全可以忽略。</p>
+
+<h2 data-id="763">6.3 网络分区（Network Partition）</h2>
+
+<p data-id="764"><strong data-id="765">问题描述</strong>：网络发生分裂，原有的 Chord 环被分成两个或多个独立子集，每个子集各自形成独立的 Chord 环。</p>
+
+<p data-id="766"><strong data-id="767">处理方式</strong>：分区期间，每个子环各自独立运行，内部路由正常。分区恢复后，两个子环的节点通过 stabilize 和 notify 逐渐"发现"对方的节点，经过若干维护周期后合并为一个统一的环。合并过程中存在短暂的路由不一致（某些键的查找可能返回错误节点），这在最终一致性模型下是可接受的。Tracker 可通过对比其全局节点列表和各节点上报的拓扑信息，辅助人工检测分区事件。</p>
+
+<h2 data-id="768">6.4 Tracker 不可用</h2>
+
+<p data-id="769"><strong data-id="770">影响范围与处理策略如下</strong>：</p>
+
+<ul data-id="771">
+    <li data-id="772"><strong data-id="773">现有 ACTIVE 节点</strong>：完全不受影响。<code data-id="774">report_to_tracker</code> 静默失败，不影响任何 Chord 协议逻辑。</li>
+    <li data-id="775"><strong data-id="776">新加入节点</strong>：无法获取 seed 节点列表，需通过手动配置 seed 节点地址（在启动参数或配置文件中直接指定任意已知节点的 <code data-id="777">https://hostname</code>）绕过 Tracker。</li>
+    <li data-id="778"><strong data-id="779">监控面板</strong>：失去全局统计视图，但可以直接查询各节点的 <code data-id="780">/chord/state</code> 接口获取本地路由状态。</li>
+</ul>
+
+<h2 data-id="781">6.5 环中只有一个节点</h2>
+
+<p data-id="782">单节点环是 Chord 网络的最简特殊情况，需确保协议在此情况下不产生死循环或错误：</p>
+
+<ul data-id="783">
+    <li data-id="784"><code data-id="785">predecessor = None</code>，<code data-id="786">successor = self</code>，<code data-id="787">successor_list = [self]</code>。</li>
+    <li data-id="788">任意 <code data-id="789">find_successor(id)</code> 均返回 self（因为 self 是唯一节点，负责全部键空间）。</li>
+    <li data-id="790"><code data-id="791">stabilize</code>：向 self 请求 predecessor（本地直接返回 None），然后向 self 发送 notify（本地处理）。notify 逻辑：predecessor == None，但发起方也是 self，接受后 predecessor = self（或保持 None，避免 self 指向自己形成自引用，实现时可选择保持 predecessor = None）。</li>
+    <li data-id="792">第一个新节点 X 加入时：X 向 self 发起 join，self 返回 successor = self，X 设置 successor = self 并发 notify 给 self。self 在下一次 stabilize 中发现 X 成为新的前驱，并将 X 纳入 successor_list。</li>
+</ul>
+
+<h2 data-id="793">6.6 手指表中存在过期节点</h2>
+
+<p data-id="794"><strong data-id="795">问题描述</strong>：手指表条目中记录的节点已经离线，但尚未被 fix_fingers 修复（fix_fingers 轮转修复，最长 160 分钟才会完整刷新一遍）。</p>
+
+<p data-id="796"><strong data-id="797">处理方式</strong>：路由时遇到无响应的手指表节点，跳过该条目，尝试手指表中下一个候选（即 i-1 的条目）。同时将该节点标记为 suspicious，下一次 fix_fingers 轮转到该条目时会执行 find_successor 并修复。在大量手指表条目失效的极端情况下，路由退化为 O(N) 的线性后继链查找，直到 fix_fingers 逐步修复。</p>
+
+<h2 data-id="798">6.7 find_successor 中的 hop 循环</h2>
+
+<p data-id="799"><strong data-id="800">问题描述</strong>：在环部分断裂时，closest_preceding_node 的选择可能使请求在少数几个节点之间循环（节点 A 转发给 B，B 转发给 A，…）。</p>
+
+<p data-id="801"><strong data-id="802">处理方式</strong>：</p>
+<ul data-id="803">
+    <li data-id="804">迭代模式下，发起方维护 <code data-id="805">visited_nodes</code> 集合，每跳将当前节点 ID 加入集合。若下一跳节点已在集合中，立即返回错误（环路检测）。</li>
+    <li data-id="806"><code data-id="807">max_hops = 161</code> 作为硬上限，即使 visited_nodes 检测失效，也能终止请求。</li>
+</ul>
+
+<h2 data-id="808">6.8 节点加入时的 successor 选择</h2>
+
+<p data-id="809"><strong data-id="810">问题描述</strong>：新节点选择的 seed 节点恰好处于 LEAVING 状态，其 find_successor 响应可能不准确，导致新节点加入到错误的位置。</p>
+
+<p data-id="811"><strong data-id="812">处理方式</strong>：Tracker 返回 k=5 个 seed 候选节点，新节点按顺序尝试每个候选，直到找到一个返回正常响应（状态码 200，且响应中包含有效 successor 信息）的 seed 节点。LEAVING 状态的节点在收到 join 请求时返回 503 NODE_LEAVING，新节点收到后自动尝试下一个 seed。</p>
+
+<h2 data-id="813">6.9 Stabilize 中的竞态</h2>
+
+<p data-id="814"><strong data-id="815">问题描述</strong>：节点 A 正在执行 stabilize 并准备更新其 successor，此时节点 B 也在执行 stabilize，两者对同一区间的邻居关系可能产生短暂冲突。</p>
+
+<p data-id="816"><strong data-id="817">处理方式</strong>：Chord 协议的论文证明，在最终一致性模型下，stabilize + notify 的并发执行是安全的，不会导致永久性的错误状态。短暂的不一致（如 A 的 successor 指向 C 而 B 的 predecessor 指向 D）会在后续的维护周期中自动收敛。实现时，每个节点对自身状态的修改使用读写锁保证单节点内的并发安全，但跨节点的分布式状态不依赖分布式锁。</p>
+
+<h2 data-id="818">6.10 大量节点同时失效（批量崩溃）</h2>
+
+<p data-id="819"><strong data-id="820">问题描述</strong>：超过 r=3 个连续节点同时崩溃，导致某个节点的整个 successor_list 全部失效，进而引发环断裂。</p>
+
+<p data-id="821"><strong data-id="822">处理方式与分析</strong>：</p>
+<ul data-id="823">
+    <li data-id="824">这是 Chord 的已知局限性——后继列表只能容忍最多 r 个连续节点同时失效。</li>
+    <li data-id="825">概率分析：在 N 个节点的网络中，r=3 个特定连续节点同时崩溃的概率极低，且随着 r 增大呈指数级降低。</li>
+    <li data-id="826">处理策略：受影响的节点切换为 ISOLATED 状态，通过 Tracker 获取新的 seed 节点，执行完整 join 流程重新加入。</li>
+    <li data-id="827">扩展建议：若需要更强的容错性，可将 r 增大到 5 或 10（参见 10.1 节第 4 条实验方向）。</li>
+</ul>
+
+<h2>6.11 TLS 证书问题</h2>
+
+<p><strong>问题描述</strong>：节点证书过期、域名不匹配、自签名证书未被 CA 信任，或中间证书缺失，导致 TLS 握手失败。但节点进程本身可能完全正常运行。</p>
+
+<p><strong>处理策略</strong>：</p>
+
+<ul>
+    <li>TLS 错误不触发 <code>consecutive_failures</code> 增加，避免因证书配置问题被错误踢出网络</li>
+    <li>单独维护 <code>tls_error_count</code>，连续 TLS 错误达到阈值（默认 3 次）时写入告警日志，并通过 heartbeat 上报给 Tracker</li>
+    <li>节点启动时应自检证书有效期，若距过期不足 7 天则打印警告日志</li>
+    <li>建议使用 Let's Encrypt 等自动续签机制，或由内部统一 CA 签发证书并配置监控告警</li>
+</ul>
+
+<h2>6.12 高延迟网络（跨地域节点）</h2>
+
+<p><strong>问题描述</strong>：跨地域节点（如亚洲与欧洲之间）RTT 可能超过 150ms。find_successor 的迭代过程若经过多个跨域节点，总延迟可能逼近超时上限，导致手指表修复频繁失败。</p>
+
+<p><strong>处理策略</strong>：</p>
+
+<ul>
+    <li>fix_fingers 使用独立的宽松超时（30 秒，见 5.2.2 节），允许跨地域的 find_successor 迭代完整完成</li>
+    <li>手指表修复失败时，仅将对应条目标记为 <code>health_status = unknown</code>，不视为节点失效，等待下一轮 fix_fingers 重试</li>
+    <li>可通过 Tracker 的 <code>avg_request_latency_ms</code> 统计观察全局延迟分布，据此调整 <code>chord.http_total_timeout_seconds</code> 配置值</li>
+</ul>
+
+<h2>6.13 节点 URI 变更</h2>
+
+<p><strong>问题描述</strong>：节点运营者希望更换域名（如从 <code>node-old.example.com</code> 变更为 <code>node-new.example.com</code>）。</p>
+
+<p><strong>处理规则</strong>：URI 是节点的不可变标识符——URI 变更等同于旧节点下线、新节点加入，因为 <code>node_id = SHA1(uri)</code> 会随之改变，新旧节点在环上的位置完全不同。正确的操作流程为：</p>
+
+<ol>
+    <li>旧 URI 节点执行 Graceful Leave（通知 successor 和 predecessor，向 Tracker 注销）</li>
+    <li>新 URI 节点执行完整 Join 流程重新加入网络</li>
+</ol>
+
+<p>不支持原地 URI 更新。试图在不执行 Leave 的情况下直接切换 URI 会导致旧节点 ID 的残留路由条目长期存在于其他节点的手指表中，直至 fix_fingers 逐渐覆盖。</p>
+
+<h2>6.14 HTTPS 重定向与反向代理</h2>
+
+<p><strong>问题描述</strong>：节点前方的反向代理（如 Nginx、Caddy）可能对某些路径返回 301/302 重定向，导致 Chord 协议请求被路由到意外地址，或在重定向链中丢失请求体。</p>
+
+<p><strong>处理策略</strong>：</p>
+
+<ul>
+    <li>节点 HTTP 客户端默认<strong>不自动跟随重定向</strong>，避免被重定向到非 Chord 端点</li>
+    <li>3xx 响应视为配置错误，记录告警日志，不计入 <code>consecutive_failures</code>，不触发节点失效流程</li>
+    <li>节点运营者应确保反向代理对 <code>/chord/*</code> 和 <code>/tracker/*</code> 路径直接透传，不做重定向</li>
+    <li>若节点部署时配置了 HTTP→HTTPS 重定向，客户端应始终直接使用 <code>https://</code> URI，不发起 HTTP 请求，从而完全绕过重定向</li>
+</ul>
+
+
+<!-- ==================== 第七章 ==================== -->
+<hr data-id="828" class="chapter-divider">
+<div data-id="829" class="chapter-label">第七章</div>
+<h1 data-id="830">RESTful API 规范</h1>
+
+<h2 data-id="831">7.1 通用约定</h2>
+
+<p data-id="832">本章定义系统中所有 RESTful API 的设计规范，节点 API 和 Tracker API 均遵循以下通用约定：</p>
+
+<table data-id="833">
+    <tr data-id="834">
+        <th data-id="835">约定项</th>
+        <th data-id="836">规定</th>
+    </tr>
+    <tr data-id="837">
+        <td data-id="838">内容类型</td>
+        <td data-id="839">所有请求和响应均使用 <code data-id="840">Content-Type: application/json</code></td>
+    </tr>
+    <tr data-id="841">
+        <td data-id="842">Base URL（节点）</td>
+        <td data-id="843"><code data-id="844">节点 URI 即为其 Base URL（例如 https://node1.example.com），API 路径直接拼接其后</code></td>
+    </tr>
+    <tr data-id="845">
+        <td data-id="846">Base URL（Tracker）</td>
+        <td data-id="847"><code data-id="848">https://tracker.example.com</code></td>
+    </tr>
+    <tr data-id="849">
+        <td data-id="850">HTTP 方法语义</td>
+        <td data-id="851">GET（查询状态）、POST（执行操作或发送通知）、DELETE（主动注销/离网）</td>
+    </tr>
+    <tr data-id="852">
+        <td data-id="853">ID 字段格式</td>
+        <td data-id="854">所有 <code data-id="855">node_id</code> 字段均为 40 位十六进制字符串（小写），长度严格为 40 字符</td>
+    </tr>
+    <tr data-id="856">
+        <td data-id="857">时间戳格式</td>
+        <td data-id="858">所有时间字段均使用 ISO 8601 UTC 格式，例如 <code data-id="859">2026-05-27T13:00:00Z</code></td>
+    </tr>
+    <tr data-id="860">
+        <td data-id="861">跳数控制字段</td>
+        <td data-id="862"><code data-id="863">hop_count</code>（整数），在迭代 find_successor 中由调用方维护，每次转发递增</td>
+    </tr>
+    <tr data-id="864">
+        <td data-id="865">null 字段</td>
+        <td data-id="866">可选字段值为空时使用 JSON <code data-id="867">null</code>，而非省略字段</td>
+    </tr>
+    <tr data-id="868">
+        <td data-id="869">字符编码</td>
+        <td data-id="870">UTF-8</td>
+    </tr>
+</table>
+
+<h2 data-id="871">7.2 统一错误响应格式</h2>
+
+<p data-id="872">所有 API 在发生错误时，均返回以下统一结构的 JSON 响应体：</p>
+
+<pre data-id="873">{
+  "error": {
+    "code":    "ERROR_CODE",
+    "message": "人类可读的错误描述（中文或英文均可）",
+    "detail":  {}
+  }
+}</pre>
+
+<table data-id="874">
+    <tr data-id="875">
+        <th data-id="876">HTTP 状态码</th>
+        <th data-id="877">error.code</th>
+        <th data-id="878">含义</th>
+        <th data-id="879">常见触发场景</th>
+    </tr>
+    <tr data-id="880">
+        <td data-id="881">400</td>
+        <td data-id="882">INVALID_REQUEST</td>
+        <td data-id="883">请求参数格式错误</td>
+        <td data-id="884">node_id 长度不为 40、端口超范围、缺少必填字段</td>
+    </tr>
+    <tr data-id="885">
+        <td data-id="886">404</td>
+        <td data-id="887">NODE_NOT_FOUND</td>
+        <td data-id="888">请求的节点不存在</td>
+        <td data-id="889">Tracker 中查询不存在的 node_id</td>
+    </tr>
+    <tr data-id="890">
+        <td data-id="891">409</td>
+        <td data-id="892">ID_COLLISION</td>
+        <td data-id="893">节点 ID 已存在</td>
+        <td data-id="894">加入时发现 node_id 与现有节点冲突</td>
+    </tr>
+    <tr data-id="895">
+        <td data-id="896">503</td>
+        <td data-id="897">NODE_ISOLATED</td>
+        <td data-id="898">节点处于孤立状态，无法路由</td>
+        <td data-id="899">节点 ISOLATED 时收到 find_successor 请求</td>
+    </tr>
+    <tr data-id="900">
+        <td data-id="901">503</td>
+        <td data-id="902">MAX_HOPS_EXCEEDED</td>
+        <td data-id="903">超过最大跳数限制</td>
+        <td data-id="904">find_successor 的 hop_count 达到 161</td>
+    </tr>
+    <tr data-id="905">
+        <td data-id="906">503</td>
+        <td data-id="907">NODE_LEAVING</td>
+        <td data-id="908">节点正在离网，拒绝服务</td>
+        <td data-id="909">节点处于 LEAVING 状态时收到任何非 ping 请求</td>
+    </tr>
+    <tr data-id="910">
+        <td data-id="911">504</td>
+        <td data-id="912">UPSTREAM_TIMEOUT</td>
+        <td data-id="913">上游节点超时</td>
+        <td data-id="914">递归模式下（如有）上游节点 5 秒内无响应</td>
+    </tr>
+</table>
+
+<h2 data-id="915">7.3 节点 API（Node API）</h2>
+
+<h3 data-id="916">API 1：GET /chord/identity</h3>
+
+<div data-id="917" class="api-block">
+    <div data-id="918" class="api-header"><span data-id="919" class="api-method-get">GET</span> /chord/identity — 查询节点身份信息</div>
+    <div data-id="920" class="api-body">
+        <p data-id="921"><strong data-id="922">用途</strong>：返回本节点的基本身份信息，不含路由表详情。用于快速确认节点存在和状态。</p>
+        <p data-id="923"><strong data-id="924">请求</strong>：无参数，无请求体。</p>
+        <p data-id="925"><strong data-id="926">成功响应（200）</strong>：</p>
+        <pre data-id="927">{
+  "node_id":   "a94a8fe5ccb19ba61c4c0873d391e987982fbbd3",
+  "uri":       "https://node1.example.com",
+  "status":    "ACTIVE",
+  "joined_at": "2026-05-27T12:00:00Z"
+}</pre>
+        <p data-id="928"><strong data-id="929">特别说明</strong>：即使节点处于 ISOLATED 状态，也应正常响应此接口（返回 status: "ISOLATED"），用于诊断和被其他节点发现。</p>
+    </div>
+</div>
+
+<h3 data-id="930">API 2：GET /chord/state</h3>
+
+<div data-id="931" class="api-block">
+    <div data-id="932" class="api-header"><span data-id="933" class="api-method-get">GET</span> /chord/state — 查询完整 Chord 状态</div>
+    <div data-id="934" class="api-body">
+        <p data-id="935"><strong data-id="936">用途</strong>：返回完整的 Chord 节点状态，包括路由表全量数据，用于调试和监控。</p>
+        <p data-id="937"><strong data-id="938">请求</strong>：无参数。</p>
+        <p data-id="939"><strong data-id="940">成功响应（200）</strong>：</p>
+        <pre data-id="941">{
+  "node_id":   "a94a8fe5ccb19ba61c4c0873d391e987982fbbd3",
+  "status":    "ACTIVE",
+  "predecessor": { "node_id": "...", "uri": "https://node4.example.com" },
+  "successor":   { "node_id": "...", "uri": "https://node2.example.com" },
+  "successor_list": [
+    { "node_id": "...", "uri": "https://node2.example.com" },
+    { "node_id": "...", "uri": "https://node3.example.com" },
+    { "node_id": "...", "uri": "https://node4.example.com" }
+  ],
+  "finger_table": [
+    { "index": 0,   "start": "...", "node": { "node_id": "...", "uri": "https://nodeX.example.com" }, "status": "ok" },
+    { "index": 1,   "start": "...", "node": { "node_id": "...", "uri": "https://nodeX.example.com" }, "status": "ok" }
+  ],
+  "last_maintenance_at": "2026-05-27T13:00:00Z",
+  "next_finger_index":   42
+}</pre>
+        <p data-id="942"><strong data-id="943">说明</strong>：<code data-id="944">finger_table</code> 返回全部 160 个条目（index 0 ~ 159）。<code data-id="945">predecessor</code> 为空时值为 JSON <code data-id="946">null</code>（字段不省略）。</p>
+    </div>
+</div>
+
+<h3 data-id="947">API 3：GET /chord/ping</h3>
+
+<div data-id="948" class="api-block">
+    <div data-id="949" class="api-header"><span data-id="950" class="api-method-get">GET</span> /chord/ping — 节点存活检查</div>
+    <div data-id="951" class="api-body">
+        <p data-id="952"><strong data-id="953">用途</strong>：轻量级存活探测，用于 check_predecessor 和 health_check_ring。</p>
+        <p data-id="954"><strong data-id="955">请求</strong>：无参数。</p>
+        <p data-id="956"><strong data-id="957">成功响应（200）</strong>：</p>
+        <pre data-id="958">{
+  "node_id":   "a94a8fe5ccb19ba61c4c0873d391e987982fbbd3",
+  "status":    "ACTIVE",
+  "timestamp": "2026-05-27T13:00:00Z"
+}</pre>
+        <p data-id="959"><strong data-id="960">说明</strong>：响应必须在 5 秒内返回，否则调用方认为该节点失效。ISOLATED 节点也应响应 ping（返回 status: "ISOLATED"），表示节点存在但无法参与路由。</p>
+    </div>
+</div>
+
+<h3 data-id="961">API 4：POST /chord/find_successor</h3>
+
+<div data-id="962" class="api-block">
+    <div data-id="963" class="api-header"><span data-id="964" class="api-method-post">POST</span> /chord/find_successor — 迭代查找后继节点</div>
+    <div data-id="965" class="api-body">
+        <p data-id="966"><strong data-id="967">用途</strong>：Chord 路由的核心接口，迭代式查找给定 ID 的后继节点。</p>
+        <p data-id="968"><strong data-id="969">请求体</strong>：</p>
+        <pre data-id="970">{
+  "id":             "b94a8fe5ccb19ba61c4c0873d391e987982fbbd3",
+  "hop_count":      0,
+  "max_hops":       161,
+  "visited_nodes":  ["a94a8fe5ccb19ba61c4c0873d391e987982fbbd3"]
+}</pre>
+        <table data-id="971">
+            <tr data-id="972"><th data-id="973">字段</th><th data-id="974">类型</th><th data-id="975">说明</th></tr>
+            <tr data-id="976"><td data-id="977"><code data-id="978">id</code></td><td data-id="979">string</td><td data-id="980">目标 ID，40 位十六进制字符串</td></tr>
+            <tr data-id="981"><td data-id="982"><code data-id="983">hop_count</code></td><td data-id="984">integer</td><td data-id="985">当前跳数，发起方初始为 0</td></tr>
+            <tr data-id="986"><td data-id="987"><code data-id="988">max_hops</code></td><td data-id="989">integer</td><td data-id="990">最大允许跳数，固定为 161（m+1）</td></tr>
+            <tr data-id="991"><td data-id="992"><code data-id="993">visited_nodes</code></td><td data-id="994">array</td><td data-id="995">已访问节点 ID 列表，用于环路检测</td></tr>
+        </table>
+        <p data-id="996"><strong data-id="997">成功响应（200）- 直接找到后继（found: true）</strong>：</p>
+        <pre data-id="998">{
+  "found":     true,
+  "successor": { "node_id": "c84a8fe5ccb19ba61c4c0873d391e987982fbbd3", "uri": "https://node2.example.com" },
+  "hop_count": 3
+}</pre>
+        <p data-id="999"><strong data-id="1000">成功响应（200）- 需要继续转发（found: false，迭代模式）</strong>：</p>
+        <pre data-id="1001">{
+  "found":    false,
+  "next_hop": { "node_id": "b84a8fe5ccb19ba61c4c0873d391e987982fbbd3", "uri": "https://node3.example.com" },
+  "hop_count": 1
+}</pre>
+        <p data-id="1002"><strong data-id="1003">错误响应</strong>：503 MAX_HOPS_EXCEEDED（跳数超限）、503 NODE_ISOLATED（节点孤立）、400 INVALID_REQUEST（id 格式错误）、503 NODE_LEAVING（节点离网中）。</p>
+        <div data-id="1004" class="callout callout-important" style="margin-top:8pt;">
+            <div data-id="1005" class="callout-label">重要：迭代模式说明</div>
+            <p data-id="1006" style="margin-bottom:0;">当返回 <code data-id="1007">found: false</code> 时，本节点不会主动调用 <code data-id="1008">next_hop</code>——而是将 next_hop 返回给调用方，由调用方自行向 next_hop 节点发起下一次请求。调用方维护跳转循环，确保 HTTP 调用深度始终为 1。</p>
+        </div>
+    </div>
+</div>
+
+<h3 data-id="1009">API 5：GET /chord/predecessor</h3>
+
+<div data-id="1010" class="api-block">
+    <div data-id="1011" class="api-header"><span data-id="1012" class="api-method-get">GET</span> /chord/predecessor — 查询前驱节点</div>
+    <div data-id="1013" class="api-body">
+        <p data-id="1014"><strong data-id="1015">用途</strong>：返回本节点的前驱节点信息，由 stabilize 协议调用。</p>
+        <p data-id="1016"><strong data-id="1017">请求</strong>：无参数。</p>
+        <p data-id="1018"><strong data-id="1019">成功响应（200）- 前驱存在</strong>：</p>
+        <pre data-id="1020">{
+  "predecessor": { "node_id": "a04a8fe5ccb19ba61c4c0873d391e987982fbbd3", "uri": "https://node4.example.com" }
+}</pre>
+        <p data-id="1021"><strong data-id="1022">成功响应（200）- 前驱为空</strong>：</p>
+        <pre data-id="1023">{
+  "predecessor": null
+}</pre>
+        <p data-id="1024"><strong data-id="1025">说明</strong>：predecessor 为 None 时，返回 <code data-id="1026">{"predecessor": null}</code>，HTTP 状态仍为 200，不返回 404。</p>
+    </div>
+</div>
+
+<h3 data-id="1027">API 6：POST /chord/notify</h3>
+
+<div data-id="1028" class="api-block">
+    <div data-id="1029" class="api-header"><span data-id="1030" class="api-method-post">POST</span> /chord/notify — 通知前驱候选</div>
+    <div data-id="1031" class="api-body">
+        <p data-id="1032"><strong data-id="1033">用途</strong>：节点 N 通知本节点"我可能是你的前驱"，由 stabilize 协议触发。</p>
+        <p data-id="1034"><strong data-id="1035">请求体</strong>：</p>
+        <pre data-id="1036">{
+  "node": { "node_id": "a04a8fe5ccb19ba61c4c0873d391e987982fbbd3", "uri": "https://node4.example.com" }
+}</pre>
+        <p data-id="1037"><strong data-id="1038">成功响应（200）- 接受</strong>：</p>
+        <pre data-id="1039">{
+  "accepted":    true,
+  "predecessor": { "node_id": "a04a8fe5ccb19ba61c4c0873d391e987982fbbd3", "uri": "https://node4.example.com" }
+}</pre>
+        <p data-id="1040"><strong data-id="1041">成功响应（200）- 拒绝</strong>：</p>
+        <pre data-id="1042">{
+  "accepted":    false,
+  "predecessor": { "node_id": "当前前驱的 node_id", "uri": "https://nodeX.example.com" }
+}</pre>
+        <p data-id="1043"><strong data-id="1044">说明</strong>：<code data-id="1045">accepted: true</code> 表示请求方已被接受为新前驱；<code data-id="1046">accepted: false</code> 表示请求方不在合法前驱范围内，predecessor 不变。节点处于 LEAVING 状态时返回 503 NODE_LEAVING。</p>
+    </div>
+</div>
+
+<h3 data-id="1047">API 7：GET /chord/successor_list</h3>
+
+<div data-id="1048" class="api-block">
+    <div data-id="1049" class="api-header"><span data-id="1050" class="api-method-get">GET</span> /chord/successor_list — 查询后继列表</div>
+    <div data-id="1051" class="api-body">
+        <p data-id="1052"><strong data-id="1053">用途</strong>：返回本节点的后继列表，由 stabilize 协议在获取 successor 的 successor_list 时调用。</p>
+        <p data-id="1054"><strong data-id="1055">请求</strong>：无参数。</p>
+        <p data-id="1056"><strong data-id="1057">成功响应（200）</strong>：</p>
+        <pre data-id="1058">{
+  "successor_list": [
+    { "node_id": "...", "uri": "https://node2.example.com" },
+    { "node_id": "...", "uri": "https://node3.example.com" },
+    { "node_id": "...", "uri": "https://node4.example.com" }
+  ]
+}</pre>
+        <p data-id="1059"><strong data-id="1060">说明</strong>：列表长度 1 到 r=3，按环上距离从近到远排序（第 0 项最近）。单节点环时返回 <code data-id="1061">[self]</code>，列表长度为 1。</p>
+    </div>
+</div>
+
+<h3 data-id="1062">API 8：POST /chord/join</h3>
+
+<div data-id="1063" class="api-block">
+    <div data-id="1064" class="api-header"><span data-id="1065" class="api-method-post">POST</span> /chord/join — 通过本节点加入网络</div>
+    <div data-id="1066" class="api-body">
+        <p data-id="1067"><strong data-id="1068">用途</strong>：新节点 N 通过本节点（作为 seed/bootstrap 点）加入 Chord 网络，获取初始 successor 信息。</p>
+        <p data-id="1069"><strong data-id="1070">请求体</strong>：</p>
+        <pre data-id="1071">{
+  "node": { "node_id": "f04a8fe5ccb19ba61c4c0873d391e987982fbbd3", "uri": "https://node5.example.com" }
+}</pre>
+        <p data-id="1072"><strong data-id="1073">成功响应（200）</strong>：</p>
+        <pre data-id="1074">{
+  "successor": { "node_id": "...", "uri": "https://node2.example.com" },
+  "successor_list": [
+    { "node_id": "...", "uri": "https://node2.example.com" }
+  ]
+}</pre>
+        <p data-id="1075"><strong data-id="1076">说明</strong>：本接口内部调用 <code data-id="1077">find_successor(N.id)</code>，返回 N 的初始 successor 及其 successor_list。N 收到后自行完成状态设置并向 successor 发送 notify。若本节点处于 ISOLATED 或 LEAVING 状态，返回 503。<strong data-id="1078">碰撞检测</strong>：若 N.node_id == self.node_id，返回 409 ID_COLLISION。</p>
+    </div>
+</div>
+
+<h3 data-id="1079">API 9：POST /chord/leave</h3>
+
+<div data-id="1080" class="api-block">
+    <div data-id="1081" class="api-header"><span data-id="1082" class="api-method-post">POST</span> /chord/leave — 接收邻居离网通知</div>
+    <div data-id="1083" class="api-body">
+        <p data-id="1084"><strong data-id="1085">用途</strong>：Graceful Leave 协议中，离网节点通知其 successor 或 predecessor，告知邻居关系变更。</p>
+        <p data-id="1086"><strong data-id="1087">请求体（离网节点通知其 successor）</strong>：</p>
+        <pre data-id="1088">{
+  "role": "predecessor_leaving",
+  "new_predecessor": { "node_id": "...", "uri": "https://nodeX.example.com" }
+}</pre>
+        <p data-id="1089"><strong data-id="1090">请求体（离网节点通知其 predecessor）</strong>：</p>
+        <pre data-id="1091">{
+  "role": "successor_leaving",
+  "new_successor": { "node_id": "...", "uri": "https://nodeX.example.com" }
+}</pre>
+        <p data-id="1092"><strong data-id="1093">成功响应（200）</strong>：</p>
+        <pre data-id="1094">{ "acknowledged": true }</pre>
+        <p data-id="1095"><strong data-id="1096">说明</strong>：收到此通知后，节点立即更新对应邻居关系，并触发一次提前的 stabilize（不必等待下一个 60 秒周期），以加速拓扑修复。</p>
+    </div>
+</div>
+
+<h3 data-id="1097">API 10：GET /chord/finger_table</h3>
+
+<div data-id="1098" class="api-block">
+    <div data-id="1099" class="api-header"><span data-id="1100" class="api-method-get">GET</span> /chord/finger_table — 查询手指表（调试）</div>
+    <div data-id="1101" class="api-body">
+        <p data-id="1102"><strong data-id="1103">用途</strong>：返回完整的手指表，用于调试和路由正确性验证。</p>
+        <p data-id="1104"><strong data-id="1105">请求</strong>：无参数。</p>
+        <p data-id="1106"><strong data-id="1107">成功响应（200）</strong>：</p>
+        <pre data-id="1108">{
+  "node_id": "a94a8fe5ccb19ba61c4c0873d391e987982fbbd3",
+  "finger_table": [
+    {
+      "index":  0,
+      "start":  "a94a8fe5ccb19ba61c4c0873d391e987982fbbd4",
+      "node":   { "node_id": "...", "uri": "https://nodeX.example.com" },
+      "status": "ok"
+    }
+  ],
+  "next_repair_index": 42
+}</pre>
+        <p data-id="1109"><strong data-id="1110">finger 条目 status 字段说明</strong>：</p>
+        <table data-id="1111">
+            <tr data-id="1112"><th data-id="1113">status 值</th><th data-id="1114">含义</th></tr>
+            <tr data-id="1115"><td data-id="1116">ok</td><td data-id="1117">条目已成功验证，节点正常响应</td></tr>
+            <tr data-id="1118"><td data-id="1119">suspicious</td><td data-id="1120">最近一次请求失败，可能临时不可达</td></tr>
+            <tr data-id="1121"><td data-id="1122">unknown</td><td data-id="1123">条目尚未经过 fix_fingers 验证（初始状态）</td></tr>
+        </table>
+    </div>
+</div>
+
+<h2 data-id="1124">7.4 Tracker API</h2>
+
+<p data-id="1125">Tracker 服务提供以下 8 个 API 接口，供节点注册、心跳上报、bootstrap 引导及监控使用。</p>
+
+<h3 data-id="1126">Tracker API 1：POST /tracker/nodes</h3>
+
+<div data-id="1127" class="api-block">
+    <div data-id="1128" class="api-header"><span data-id="1129" class="api-method-post">POST</span> /tracker/nodes — 节点注册</div>
+    <div data-id="1130" class="api-body">
+        <p data-id="1131"><strong data-id="1132">用途</strong>：节点向 Tracker 注册自身，通常在完成 join 流程后调用。</p>
+        <p data-id="1133"><strong data-id="1134">请求体</strong>：</p>
+        <pre data-id="1135">{
+  "node_id": "a94a8fe5ccb19ba61c4c0873d391e987982fbbd3",
+  "uri":     "https://node1.example.com"
+}</pre>
+        <p data-id="1136"><strong data-id="1137">成功响应（200）</strong>：</p>
+        <pre data-id="1138">{
+  "registered":         true,
+  "known_nodes_count":  15,
+  "message":            "Node registered successfully"
+}</pre>
+        <p data-id="1139"><strong data-id="1140">说明</strong>：若该 node_id 已存在，则更新 last_seen 和连接信息（允许节点重启后重新注册）。Tracker 存储上限可配置（默认 1000），超过时淘汰最久未活跃的节点。</p>
+    </div>
+</div>
+
+<h3 data-id="1141">Tracker API 2：DELETE /tracker/nodes/{node_id}</h3>
+
+<div data-id="1142" class="api-block">
+    <div data-id="1143" class="api-header"><span data-id="1144" class="api-method-delete">DELETE</span> /tracker/nodes/{node_id} — 节点注销</div>
+    <div data-id="1145" class="api-body">
+        <p data-id="1146"><strong data-id="1147">用途</strong>：节点主动向 Tracker 注销，在 Graceful Leave 流程中调用。</p>
+        <p data-id="1148"><strong data-id="1149">请求</strong>：无请求体，node_id 在 URL 路径中。</p>
+        <p data-id="1150"><strong data-id="1151">成功响应（200）</strong>：</p>
+        <pre data-id="1152">{
+  "deregistered": true,
+  "node_id":      "a94a8fe5ccb19ba61c4c0873d391e987982fbbd3"
+}</pre>
+        <p data-id="1153"><strong data-id="1154">错误响应</strong>：404 NODE_NOT_FOUND（该 node_id 未在 Tracker 注册）。</p>
+    </div>
+</div>
+
+<h3 data-id="1155">Tracker API 3：GET /tracker/nodes/seeds</h3>
+
+<div data-id="1156" class="api-block">
+    <div data-id="1157" class="api-header"><span data-id="1158" class="api-method-get">GET</span> /tracker/nodes/seeds — 获取 bootstrap seed 节点</div>
+    <div data-id="1159" class="api-body">
+        <p data-id="1160"><strong data-id="1161">用途</strong>：新节点获取 bootstrap 所需的 seed 节点列表。</p>
+        <p data-id="1162"><strong data-id="1163">请求参数（Query String）</strong>：</p>
+        <table data-id="1164">
+            <tr data-id="1165"><th data-id="1166">参数</th><th data-id="1167">类型</th><th data-id="1168">默认值</th><th data-id="1169">说明</th></tr>
+            <tr data-id="1170"><td data-id="1171"><code data-id="1172">count</code></td><td data-id="1173">integer</td><td data-id="1174">5</td><td data-id="1175">请求的 seed 节点数量，最大 20</td></tr>
+            <tr data-id="1176"><td data-id="1177"><code data-id="1178">exclude</code></td><td data-id="1179">string</td><td data-id="1180">—</td><td data-id="1181">逗号分隔的 node_id 列表，排除这些节点（避免返回自己或已知失效节点）</td></tr>
+        </table>
+        <p data-id="1182"><strong data-id="1183">示例请求</strong>：<code data-id="1184">GET /tracker/nodes/seeds?count=5&amp;exclude=a94a8fe5ccb19ba61c4c0873d391e987982fbbd3</code></p>
+        <p data-id="1185"><strong data-id="1186">成功响应（200）</strong>：</p>
+        <pre data-id="1187">{
+  "seeds": [
+    { "node_id": "...", "uri": "https://nodeX.example.com" },
+    { "node_id": "...", "uri": "https://nodeX.example.com" }
+  ],
+  "total_known": 15,
+  "note": "Nodes selected randomly from active list"
+}</pre>
+        <p data-id="1188"><strong data-id="1189">说明</strong>：Tracker 随机选取，倾向于返回 last_seen 时间较新的节点。若 total_known 为 0，返回空 seeds 列表，表示当前无已知节点，该节点将自成单节点环。</p>
+    </div>
+</div>
+
+<h3 data-id="1190">Tracker API 4：POST /tracker/nodes/{node_id}/heartbeat</h3>
+
+<div data-id="1191" class="api-block">
+    <div data-id="1192" class="api-header"><span data-id="1193" class="api-method-post">POST</span> /tracker/nodes/{node_id}/heartbeat — 心跳上报</div>
+    <div data-id="1194" class="api-body">
+        <p data-id="1195"><strong data-id="1196">用途</strong>：节点定期向 Tracker 汇报存活状态和本地统计信息，每维护周期调用一次（约每分钟）。</p>
+        <p data-id="1197"><strong data-id="1198">请求体</strong>：</p>
+        <pre data-id="1199">{
+  "status":                 "ACTIVE",
+  "successor_id":           "b94a8fe5ccb19ba61c4c0873d391e987982fbbd3",
+  "predecessor_id":         "994a8fe5ccb19ba61c4c0873d391e987982fbbd3",
+  "successor_list_size":    3,
+  "finger_table_coverage":  0.85,
+  "uptime_seconds":         3600,
+  "maintenance_cycles":     60
+}</pre>
+        <table data-id="1200">
+            <tr data-id="1201"><th data-id="1202">字段</th><th data-id="1203">说明</th></tr>
+            <tr data-id="1204"><td data-id="1205"><code data-id="1206">finger_table_coverage</code></td><td data-id="1207">手指表中已成功更新条目的比例（0.0 到 1.0）</td></tr>
+            <tr data-id="1208"><td data-id="1209"><code data-id="1210">maintenance_cycles</code></td><td data-id="1211">自节点启动以来执行的维护周期总次数</td></tr>
+            <tr data-id="1212"><td data-id="1213"><code data-id="1214">successor_id</code></td><td data-id="1215">当前直接后继的 node_id（可为 null）</td></tr>
+            <tr data-id="1216"><td data-id="1217"><code data-id="1218">predecessor_id</code></td><td data-id="1219">当前前驱的 node_id（可为 null）</td></tr>
+        </table>
+        <p data-id="1220"><strong data-id="1221">成功响应（200）</strong>：</p>
+        <pre data-id="1222">{
+  "acknowledged": true,
+  "tracker_time": "2026-05-27T13:00:00Z"
+}</pre>
+    </div>
+</div>
+
+<h3 data-id="1223">Tracker API 5：GET /tracker/nodes</h3>
+
+<div data-id="1224" class="api-block">
+    <div data-id="1225" class="api-header"><span data-id="1226" class="api-method-get">GET</span> /tracker/nodes — 查询全部节点列表</div>
+    <div data-id="1227" class="api-body">
+        <p data-id="1228"><strong data-id="1229">用途</strong>：获取 Tracker 已知的全部节点列表，供管理和调试使用。</p>
+        <p data-id="1230"><strong data-id="1231">请求参数（Query String）</strong>：<code data-id="1232">status</code>（过滤状态，如 ACTIVE）、<code data-id="1233">limit</code>（默认 50，最大 200）、<code data-id="1234">offset</code>（默认 0，分页）。</p>
+        <p data-id="1235"><strong data-id="1236">成功响应（200）</strong>：</p>
+        <pre data-id="1237">{
+  "nodes": [
+    {
+      "node_id":     "...",
+      "uri":         "https://nodeX.example.com",
+      "status":      "ACTIVE",
+      "joined_at":   "2026-05-27T12:00:00Z",
+      "last_seen":   "2026-05-27T13:00:00Z",
+      "report_count": 42
+    }
+  ],
+  "total":  15,
+  "limit":  50,
+  "offset": 0
+}</pre>
+    </div>
+</div>
+
+<h3 data-id="1238">Tracker API 6：GET /tracker/nodes/{node_id}</h3>
+
+<div data-id="1239" class="api-block">
+    <div data-id="1240" class="api-header"><span data-id="1241" class="api-method-get">GET</span> /tracker/nodes/{node_id} — 查询特定节点记录</div>
+    <div data-id="1242" class="api-body">
+        <p data-id="1243"><strong data-id="1244">用途</strong>：查询特定节点在 Tracker 中的完整记录。</p>
+        <p data-id="1245"><strong data-id="1246">请求</strong>：无请求体，node_id 在 URL 路径中。</p>
+        <p data-id="1247"><strong data-id="1248">成功响应（200）</strong>：返回单个 TrackerNodeRecord 对象（结构同 API 5 的 nodes 数组元素）。</p>
+        <p data-id="1249"><strong data-id="1250">错误响应</strong>：404 NODE_NOT_FOUND。</p>
+    </div>
+</div>
+
+<h3 data-id="1251">Tracker API 7：GET /tracker/stats</h3>
+
+<div data-id="1252" class="api-block">
+    <div data-id="1253" class="api-header"><span data-id="1254" class="api-method-get">GET</span> /tracker/stats — 全局健康统计</div>
+    <div data-id="1255" class="api-body">
+        <p data-id="1256"><strong data-id="1257">用途</strong>：获取 DHT 网络全局健康统计，供监控面板使用。</p>
+        <p data-id="1258"><strong data-id="1259">请求</strong>：无参数。</p>
+        <p data-id="1260"><strong data-id="1261">成功响应（200）</strong>：</p>
+        <pre data-id="1262">{
+  "total_nodes":               15,
+  "active_nodes":              13,
+  "isolated_nodes":             1,
+  "leaving_nodes":              1,
+  "stale_nodes":                2,
+  "avg_finger_table_coverage":  0.82,
+  "avg_uptime_seconds":      1800,
+  "oldest_node_joined_at":  "2026-05-27T10:00:00Z",
+  "newest_node_joined_at":  "2026-05-27T13:00:00Z",
+  "tracker_uptime_seconds":  7200,
+  "stats_generated_at":     "2026-05-27T13:00:00Z"
+}</pre>
+        <table data-id="1263">
+            <tr data-id="1264"><th data-id="1265">字段</th><th data-id="1266">说明</th></tr>
+            <tr data-id="1267"><td data-id="1268"><code data-id="1269">stale_nodes</code></td><td data-id="1270">超过 180 秒（3 分钟）未发送 heartbeat 的节点，可能已崩溃但未注销</td></tr>
+            <tr data-id="1271"><td data-id="1272"><code data-id="1273">avg_finger_table_coverage</code></td><td data-id="1274">所有上报节点的手指表覆盖率平均值</td></tr>
+        </table>
+        <p data-id="1275"><strong data-id="1276">说明</strong>：Tracker 不主动探测节点存活，统计数据完全依赖节点的 heartbeat 上报，因此 stale_nodes 计数存在滞后性（最多滞后 180 秒）。</p>
+    </div>
+</div>
+
+<h3 data-id="1277">Tracker API 8：GET /tracker/health</h3>
+
+<div data-id="1278" class="api-block">
+    <div data-id="1279" class="api-header"><span data-id="1280" class="api-method-get">GET</span> /tracker/health — Tracker 自身健康检查</div>
+    <div data-id="1281" class="api-body">
+        <p data-id="1282"><strong data-id="1283">用途</strong>：检测 Tracker 服务自身是否正常运行，用于运维监控和新节点 bootstrap 前的可用性检测。</p>
+        <p data-id="1284"><strong data-id="1285">请求</strong>：无参数。</p>
+        <p data-id="1286"><strong data-id="1287">成功响应（200）</strong>：</p>
+        <pre data-id="1288">{
+  "status":          "ok",
+  "uptime_seconds":  7200,
+  "timestamp":       "2026-05-27T13:00:00Z"
+}</pre>
+    </div>
+</div>
+
+
+<!-- ==================== 第八章 ==================== -->
+<hr data-id="1289" class="chapter-divider">
+<div data-id="1290" class="chapter-label">第八章</div>
+<h1 data-id="1291">消息时序图（文字描述）</h1>
+
+<h2 data-id="1292">8.1 新节点加入网络时序</h2>
+
+<p data-id="1293">以下描述新节点 N 通过 Tracker 和 seed 节点 S1 加入已有网络的完整消息时序（A 为 N 的初始 successor）：</p>
+
+<table data-id="1294">
+    <tr data-id="1295">
+        <th data-id="1296">步骤</th>
+        <th data-id="1297">发起方 → 接收方</th>
+        <th data-id="1298">操作</th>
+        <th data-id="1299">说明</th>
+    </tr>
+    <tr data-id="1300">
+        <td data-id="1301">1</td>
+        <td data-id="1302">N 本地</td>
+        <td data-id="1303">计算 node_id = SHA1(uri)（对节点 URI 规范化后执行 SHA-1），初始化数据结构，状态 = INITIALIZING</td>
+        <td data-id="1304">本地操作，无网络交互</td>
+    </tr>
+    <tr data-id="1305">
+        <td data-id="1306">2</td>
+        <td data-id="1307">N → Tracker</td>
+        <td data-id="1308">GET /tracker/nodes/seeds?count=5</td>
+        <td data-id="1309">请求 seed 节点列表</td>
+    </tr>
+    <tr data-id="1310">
+        <td data-id="1311">3</td>
+        <td data-id="1312">Tracker → N</td>
+        <td data-id="1313">200 OK，返回 [S1, S2, S3, S4, S5]</td>
+        <td data-id="1314">Tracker 返回随机选取的活跃节点</td>
+    </tr>
+    <tr data-id="1315">
+        <td data-id="1316">4</td>
+        <td data-id="1317">N 本地</td>
+        <td data-id="1318">状态切换为 JOINING</td>
+        <td data-id="1319">开始 join 流程</td>
+    </tr>
+    <tr data-id="1320">
+        <td data-id="1321">5</td>
+        <td data-id="1322">N → S1</td>
+        <td data-id="1323">POST /chord/join（传入 N 的 NodeInfo）</td>
+        <td data-id="1324">通过第一个 seed 节点引导</td>
+    </tr>
+    <tr data-id="1325">
+        <td data-id="1326">6</td>
+        <td data-id="1327">S1 内部</td>
+        <td data-id="1328">执行 find_successor(N.id)，可能涉及多个节点间的迭代查找</td>
+        <td data-id="1329">S1 作为 bootstrap 点，代替 N 完成路由查找</td>
+    </tr>
+    <tr data-id="1330">
+        <td data-id="1331">7</td>
+        <td data-id="1332">S1 → N</td>
+        <td data-id="1333">200 OK，返回 successor=A，successor_list=[A, B, C]</td>
+        <td data-id="1334">N 获得初始 successor 和后继列表</td>
+    </tr>
+    <tr data-id="1335">
+        <td data-id="1336">8</td>
+        <td data-id="1337">N 本地</td>
+        <td data-id="1338">设置 successor=A，successor_list=[A,B,C]，predecessor=None</td>
+        <td data-id="1339">本地状态更新</td>
+    </tr>
+    <tr data-id="1340">
+        <td data-id="1341">9</td>
+        <td data-id="1342">N → A</td>
+        <td data-id="1343">POST /chord/notify（传入 N 的 NodeInfo）</td>
+        <td data-id="1344">通知 A：N 可能是你的前驱</td>
+    </tr>
+    <tr data-id="1345">
+        <td data-id="1346">10</td>
+        <td data-id="1347">A 内部</td>
+        <td data-id="1348">检查：N.id ∈ (A.predecessor.id, A.id)?；若是：A.predecessor = N</td>
+        <td data-id="1349">A 更新自己的前驱关系</td>
+    </tr>
+    <tr data-id="1350">
+        <td data-id="1351">11</td>
+        <td data-id="1352">A → N</td>
+        <td data-id="1353">200 OK，{accepted: true, predecessor: N}</td>
+        <td data-id="1354">A 确认接受 N 为新前驱</td>
+    </tr>
+    <tr data-id="1355">
+        <td data-id="1356">12</td>
+        <td data-id="1357">N 本地</td>
+        <td data-id="1358">状态切换为 ACTIVE，启动周期维护调度器</td>
+        <td data-id="1359">N 正式加入网络</td>
+    </tr>
+    <tr data-id="1360">
+        <td data-id="1361">13</td>
+        <td data-id="1362">N → Tracker</td>
+        <td data-id="1363">POST /tracker/nodes（注册）+ POST /tracker/nodes/{N.id}/heartbeat（首次心跳）</td>
+        <td data-id="1364">向 Tracker 登记</td>
+    </tr>
+    <tr data-id="1365">
+        <td data-id="1366">14</td>
+        <td data-id="1367">A 在下一维护周期</td>
+        <td data-id="1368">执行 stabilize，发现 A.predecessor = N，向 N 发送 notify；N 通过 notify 确认 A 为其 successor</td>
+        <td data-id="1369">拓扑关系在维护周期中进一步稳定</td>
+    </tr>
+</table>
+
+<h2 data-id="1370">8.2 节点主动离网时序</h2>
+
+<p data-id="1371">节点 N 主动下线，其 successor 为 A，predecessor 为 P：</p>
+
+<table data-id="1372">
+    <tr data-id="1373">
+        <th data-id="1374">步骤</th>
+        <th data-id="1375">发起方 → 接收方</th>
+        <th data-id="1376">操作</th>
+        <th data-id="1377">说明</th>
+    </tr>
+    <tr data-id="1378">
+        <td data-id="1379">1</td>
+        <td data-id="1380">N 本地</td>
+        <td data-id="1381">收到关闭信号，状态切换为 LEAVING</td>
+        <td data-id="1382">停止接受新的路由请求</td>
+    </tr>
+    <tr data-id="1383">
+        <td data-id="1384">2</td>
+        <td data-id="1385">N → A（successor）</td>
+        <td data-id="1386">POST /chord/leave，{role: "predecessor_leaving", new_predecessor: P}</td>
+        <td data-id="1387">告知 A：其新前驱应为 P</td>
+    </tr>
+    <tr data-id="1388">
+        <td data-id="1389">3</td>
+        <td data-id="1390">A 内部</td>
+        <td data-id="1391">更新 predecessor = P，立即触发提前 stabilize</td>
+        <td data-id="1392">A 的拓扑关系快速修复</td>
+    </tr>
+    <tr data-id="1393">
+        <td data-id="1394">4</td>
+        <td data-id="1395">A → N</td>
+        <td data-id="1396">200 OK，{acknowledged: true}</td>
+        <td data-id="1397"></td>
+    </tr>
+    <tr data-id="1398">
+        <td data-id="1399">5</td>
+        <td data-id="1400">N → P（predecessor）</td>
+        <td data-id="1401">POST /chord/leave，{role: "successor_leaving", new_successor: A}</td>
+        <td data-id="1402">告知 P：其新后继应为 A</td>
+    </tr>
+    <tr data-id="1403">
+        <td data-id="1404">6</td>
+        <td data-id="1405">P 内部</td>
+        <td data-id="1406">更新 successor = A，立即触发提前 stabilize</td>
+        <td data-id="1407">P 的拓扑关系快速修复</td>
+    </tr>
+    <tr data-id="1408">
+        <td data-id="1409">7</td>
+        <td data-id="1410">P → N</td>
+        <td data-id="1411">200 OK，{acknowledged: true}</td>
+        <td data-id="1412"></td>
+    </tr>
+    <tr data-id="1413">
+        <td data-id="1414">8</td>
+        <td data-id="1415">N → Tracker</td>
+        <td data-id="1416">DELETE /tracker/nodes/{N.id}</td>
+        <td data-id="1417">从 Tracker 注销</td>
+    </tr>
+    <tr data-id="1418">
+        <td data-id="1419">9</td>
+        <td data-id="1420">N 本地</td>
+        <td data-id="1421">停止 HTTP 服务，进程退出</td>
+        <td data-id="1422">离网完成</td>
+    </tr>
+</table>
+
+<h2 data-id="1423">8.3 节点崩溃后的恢复时序</h2>
+
+<p data-id="1424">节点 C 意外崩溃（无 Graceful Leave），其 predecessor 为 P，successor 为 S：</p>
+
+<table data-id="1425">
+    <tr data-id="1426">
+        <th data-id="1427">时间线</th>
+        <th data-id="1428">事件</th>
+        <th data-id="1429">说明</th>
+    </tr>
+    <tr data-id="1430">
+        <td data-id="1431">T=0</td>
+        <td data-id="1432">节点 C 崩溃（进程终止）</td>
+        <td data-id="1433">无通知发出，邻居节点不知情</td>
+    </tr>
+    <tr data-id="1434">
+        <td data-id="1435">T=60s（第 1 次维护周期）</td>
+        <td data-id="1436">S 执行 check_predecessor：Ping C → 超时（5s）→ S.predecessor = None</td>
+        <td data-id="1437">S 清空对 C 的前驱引用</td>
+    </tr>
+    <tr data-id="1438">
+        <td data-id="1439">T=60s（第 1 次维护周期）</td>
+        <td data-id="1440">P 执行 stabilize：询问 C（其 successor）的 predecessor → 超时 → 标记 C 为 suspicious</td>
+        <td data-id="1441">P 发现直接后继无响应，但尚未切换</td>
+    </tr>
+    <tr data-id="1442">
+        <td data-id="1443">T=120s（第 2 次维护周期）</td>
+        <td data-id="1444">P 执行 stabilize：C 仍无响应（第 2 次失败）→ 标记 C 为 failed → 切换 successor = successor_list[1]（即 S 或 S'）</td>
+        <td data-id="1445">P 正式放弃 C，使用备份后继</td>
+    </tr>
+    <tr data-id="1446">
+        <td data-id="1447">T=120s</td>
+        <td data-id="1448">P 向新 successor 发送 notify(P)，新 successor 检查：P.id ∈ (new_successor.predecessor.id, new_successor.id)?</td>
+        <td data-id="1449">重新建立 P 与新 successor 之间的前驱关系</td>
+    </tr>
+    <tr data-id="1450">
+        <td data-id="1451">T=120s</td>
+        <td data-id="1452">新 successor.predecessor = P，拓扑修复完成</td>
+        <td data-id="1453">约 2 个维护周期（约 2 分钟）完成自动修复</td>
+    </tr>
+    <tr data-id="1454">
+        <td data-id="1455">T+后续</td>
+        <td data-id="1456">Tracker 在约 T+180s 后将 C 标记为 stale（heartbeat 停止超过 180s）</td>
+        <td data-id="1457">Tracker 从活跃节点列表中淡出 C</td>
+    </tr>
+</table>
+
+
+<!-- ==================== 第九章 ==================== -->
+<hr data-id="1458" class="chapter-divider">
+<div data-id="1459" class="chapter-label">第九章</div>
+<h1 data-id="1460">配置参数参考</h1>
+
+<p data-id="1461">以下是系统所有可配置参数的完整清单，建议通过配置文件（YAML 或 JSON）管理，支持环境变量覆盖。所有参数均提供合理的默认值，学习场景下可直接使用默认配置。</p>
+
+<table data-id="1462">
+    <tr data-id="1463">
+        <th data-id="1464">参数名</th>
+        <th data-id="1465">默认值</th>
+        <th data-id="1466">类型</th>
+        <th data-id="1467">说明</th>
+    </tr>
+    <tr data-id="1468">
+        <td data-id="1469"><code data-id="1470">chord.m</code></td>
+        <td data-id="1471">160</td>
+        <td data-id="1472">integer</td>
+        <td data-id="1473">ID 空间位数，决定手指表长度和 ID 范围。与 SHA-1 输出长度一致，不建议修改。</td>
+    </tr>
+    <tr data-id="1474">
+        <td data-id="1475"><code data-id="1476">chord.successor_list_size</code></td>
+        <td data-id="1477">3</td>
+        <td data-id="1478">integer</td>
+        <td data-id="1479">后继列表长度 r。增大 r 可提升容错性，但增加每次 stabilize 的通信量。</td>
+    </tr>
+    <tr data-id="1480">
+        <td data-id="1481"><code data-id="1482">chord.maintenance_interval_seconds</code></td>
+        <td data-id="1483">60</td>
+        <td data-id="1484">integer</td>
+        <td data-id="1485">维护周期间隔（秒）。减小此值可加快拓扑收敛，但增加网络负载；增大此值反之。</td>
+    </tr>
+    <tr data-id="1486">
+        <td data-id="1487"><code data-id="1488">chord.http_timeout_seconds</code></td>
+        <td data-id="1489">5</td>
+        <td data-id="1490">integer</td>
+        <td data-id="1491">单次 HTTP 请求超时（秒）。超过此时间视为失败，不重试。</td>
+    </tr>
+    <tr data-id="1492">
+        <td data-id="1493"><code data-id="1494">chord.max_hops</code></td>
+        <td data-id="1495">161</td>
+        <td data-id="1496">integer</td>
+        <td data-id="1497">find_successor 最大跳数（m+1 = 161）。超过此值立即返回 MAX_HOPS_EXCEEDED 错误。</td>
+    </tr>
+    <tr data-id="1498">
+        <td data-id="1499"><code data-id="1500">chord.suspicious_threshold</code></td>
+        <td data-id="1501">1</td>
+        <td data-id="1502">integer</td>
+        <td data-id="1503">将节点标记为 suspicious 的连续失败次数。达到此次数后降低路由优先级。</td>
+    </tr>
+    <tr data-id="1504">
+        <td data-id="1505"><code data-id="1506">chord.failed_threshold</code></td>
+        <td data-id="1507">3</td>
+        <td data-id="1508">integer</td>
+        <td data-id="1509">将节点标记为 failed 的连续失败次数。达到此次数后从路由表中移除该节点。</td>
+    </tr>
+    <tr data-id="1510">
+        <td data-id="1511"><code data-id="1512">tracker.url</code></td>
+        <td data-id="1513">null</td>
+        <td data-id="1514">string</td>
+        <td data-id="1515">Tracker 服务地址（如 http://tracker.local:9000）。null 表示不使用 Tracker，需手动配置 seed 节点。</td>
+    </tr>
+    <tr data-id="1516">
+        <td data-id="1517"><code data-id="1518">tracker.seed_count</code></td>
+        <td data-id="1519">5</td>
+        <td data-id="1520">integer</td>
+        <td data-id="1521">从 Tracker 请求的 seed 节点数量。节点依次尝试每个 seed，直到成功或列表耗尽。</td>
+    </tr>
+    <tr data-id="1522">
+        <td data-id="1523"><code data-id="1524">tracker.heartbeat_interval_seconds</code></td>
+        <td data-id="1525">60</td>
+        <td data-id="1526">integer</td>
+        <td data-id="1527">心跳上报间隔（秒），建议与 maintenance_interval_seconds 保持一致。</td>
+    </tr>
+    <tr data-id="1528">
+        <td data-id="1529"><code data-id="1530">tracker.stale_threshold_seconds</code></td>
+        <td data-id="1531">180</td>
+        <td data-id="1532">integer</td>
+        <td data-id="1533">Tracker 判定节点为 stale 的心跳超时阈值（秒）。超过此时间未上报 heartbeat 的节点被标记为 stale。</td>
+    </tr>
+    <tr data-id="1534">
+        <td data-id="1535"><code data-id="1536">tracker.max_nodes</code></td>
+        <td data-id="1537">1000</td>
+        <td data-id="1538">integer</td>
+        <td data-id="1539">Tracker 存储的最大节点数。超过时淘汰 last_seen 最旧的节点记录。</td>
+    </tr>
+    <tr data-id="1540">
+        <td data-id="1541"><code data-id="1542">node.uri</code></td>
+        <td data-id="1543">https://node1.example.com</td>
+        <td data-id="1544">string</td>
+        <td data-id="1545">节点自身的 HTTPS URI，用于计算 node_id 并对外通告。须规范化：scheme 和 host 小写，去除尾部斜杠，非 443 端口须保留。</td>
+    </tr>
+    
+    <tr data-id="1552">
+        <td data-id="1553"><code data-id="1554">node.manual_seeds</code></td>
+        <td data-id="1555">[]</td>
+        <td data-id="1556">array</td>
+        <td data-id="1557">手动配置的 seed 节点 URI 列表（格式：["https://node1.example.com", "https://node2.example.com"]），在无 Tracker 时使用。</td>
+    </tr>
+</table>
+
+
+<!-- ==================== 第十章 ==================== -->
+<hr data-id="1558" class="chapter-divider">
+<div data-id="1559" class="chapter-label">第十章</div>
+<h1 data-id="1560">学习扩展建议</h1>
+
+<h2 data-id="1561">10.1 下一步实验方向</h2>
+
+<p data-id="1562">在完成基础 Chord 协议实现并验证其正确性后，以下六个方向可作为进阶学习实验，每个实验均能加深对分布式系统某一方面的理解：</p>
+
+<ol data-id="1563">
+    <li data-id="1564">
+        <p data-id="1565"><strong data-id="1566">可视化环形拓扑</strong>：实现一个简单的 Web UI，通过定期调用 Tracker 的 <code data-id="1567">/tracker/nodes</code> 接口获取所有节点状态，在浏览器中绘制 Chord 环（圆形分布图，标注每个节点的 node_id 前 8 位和位置角度）。可以实时展示节点的加入、离开和 ISOLATED 状态变化，直观理解环形路由结构。建议使用 HTML Canvas 或 SVG 实现，数据通过轮询（每 5 秒刷新一次）获取。</p>
+    </li>
+    <li data-id="1568">
+        <p data-id="1569"><strong data-id="1570">手指表验证器</strong>：编写一个独立的测试工具，遍历网络中所有节点（通过 Tracker 获取列表），对每个节点的手指表进行正确性验证——即验证每个 <code data-id="1571">finger[i].node</code> 是否真的是 <code data-id="1572">finger[i].start</code> 的正确 Chord 后继。可以通过对比"理论上正确的后继"与"实际记录的后继"来定量评估手指表的准确率，并定位路由错误的根源。</p>
+    </li>
+    <li data-id="1573">
+        <p data-id="1574"><strong data-id="1575">模拟节点崩溃与恢复观测</strong>：在运行一个多节点的 Chord 网络后，强制 kill 某个节点的进程（模拟崩溃），然后观察并记录网络修复过程：邻居节点何时检测到崩溃（第几个维护周期）、后继切换何时完成、前驱关系何时重新建立。将观测结果与 8.3 节的时序描述进行对比，验证协议行为的正确性。</p>
+    </li>
+    <li data-id="1576">
+        <p data-id="1577"><strong data-id="1578">扩大后继列表（调整 r 值）</strong>：将 <code data-id="1579">chord.successor_list_size</code> 从默认的 r=3 分别调整为 r=5 和 r=10，然后模拟同时 kill 4 个连续节点的场景，观察不同 r 值下网络的表现：r=3 时网络断裂，r=5 时仍可自愈。通过实验直观理解 r 与容错性之间的权衡关系，以及增大 r 对 stabilize 通信量的影响。</p>
+    </li>
+    <li data-id="1580">
+        <p data-id="1581"><strong data-id="1582">加入 KV 存储，实现完整 DHT</strong>：在 ACTIVE 节点基础上实现数据存储接口：<code data-id="1583">PUT /data/{key}</code>（将 key 路由到正确的 responsible 节点并存储 value）和 <code data-id="1584">GET /data/{key}</code>（路由查找 key 的 responsible 节点并返回 value）。这需要在 find_successor 的基础上加入数据转发逻辑，完成从"纯组网 DHT"到"完整分布式哈希表"的进化。可进一步实验副本存储（将同一键值存储在后继列表中的多个节点上）。</p>
+    </li>
+    <li data-id="1585">
+        <p data-id="1586"><strong data-id="1587">消息追踪与路由效率分析</strong>：在 find_successor 请求中加入 <code data-id="1588">trace_id</code> 字段，每一跳记录经过的节点 ID 和时间戳，最终将完整路由路径返回给发起方。收集多次查找的跳数统计，验证实际查找效率是否符合 O(log N) 的理论预期——例如，在 N=8 个节点的网络中，平均跳数应约为 3（log₂ 8）。通过增减节点数量，观察跳数随 N 变化的趋势曲线。</p>
+    </li>
+</ol>
+
+<h2 data-id="1589">10.2 与真实 DHT 系统的主要差异</h2>
+
+<p data-id="1590">本学习系统与生产级 DHT 实现（如 BitTorrent DHT / Kademlia、IPFS 的 libp2p-kad-dht）存在若干重要差异。理解这些差异有助于学习者将所学知识迁移到真实系统的理解和开发中：</p>
+
+<table data-id="1591">
+    <tr data-id="1592">
+        <th data-id="1593">差异维度</th>
+        <th data-id="1594">本学习系统</th>
+        <th data-id="1595">真实生产系统</th>
+        <th data-id="1596">影响</th>
+    </tr>
+    <tr data-id="1597">
+        <td data-id="1598"><strong data-id="1599">传输层协议</strong></td>
+        <td data-id="1600">HTTP/1.1（TCP，文本协议）</td>
+        <td data-id="1601">UDP（Kademlia）或 QUIC（libp2p）</td>
+        <td data-id="1602">HTTP 延迟较高（TCP 握手），但实现简单、调试工具丰富。UDP 延迟低，但需自行处理丢包、重传和消息完整性验证。</td>
+    </tr>
+    <tr data-id="1603">
+        <td data-id="1604"><strong data-id="1605">路由算法</strong></td>
+        <td data-id="1606">Chord（顺时针后继，手指表）</td>
+        <td data-id="1607">Kademlia（XOR 距离度量，k-bucket）</td>
+        <td data-id="1608">Kademlia 的双向路由（对称距离）和 k-bucket 结构在实践中更高效；Chord 的线性环结构更易于理解和教学。</td>
+    </tr>
+    <tr data-id="1609">
+        <td data-id="1610"><strong data-id="1611">节点 ID 生成</strong></td>
+        <td data-id="1612">SHA1(uri)，由节点 URI 规范化后计算</td>
+        <td data-id="1613">使用公钥哈希或 CA 颁发（防 Sybil 攻击）</td>
+        <td data-id="1614">本系统节点 ID 由其 URI 唯一决定（URI 固定则 ID 固定），生产系统通过密码学手段防止节点 ID 被恶意选择（Sybil 攻击）。</td>
+    </tr>
+    <tr data-id="1615">
+        <td data-id="1616"><strong data-id="1617">NAT 穿透</strong></td>
+        <td data-id="1618">不处理，假设节点直接可达</td>
+        <td data-id="1619">STUN/TURN、hole punching、中继</td>
+        <td data-id="1620">真实互联网上绝大多数节点位于 NAT 后，无法直接接受入站连接，需要专门的 NAT 穿透机制。</td>
+    </tr>
+    <tr data-id="1621">
+        <td data-id="1622"><strong data-id="1623">数据复制</strong></td>
+        <td data-id="1624">不涉及（无数据存储）</td>
+        <td data-id="1625">数据存储在多个最近节点（k 副本）</td>
+        <td data-id="1626">生产 DHT 将数据存储在负责节点及其 k 个邻居上，节点离网时数据不丢失；需要定期 refresh 机制防止数据因节点流动而丢失。</td>
+    </tr>
+    <tr data-id="1627">
+        <td data-id="1628"><strong data-id="1629">安全性</strong></td>
+        <td data-id="1630">无认证、无加密</td>
+        <td data-id="1631">TLS/noise 协议加密、节点身份认证</td>
+        <td data-id="1632">真实系统需防止中间人攻击、数据篡改和路由污染攻击（恶意节点返回错误路由信息）。</td>
+    </tr>
+    <tr data-id="1633">
+        <td data-id="1634"><strong data-id="1635">Tracker/Bootstrap</strong></td>
+        <td data-id="1636">中心化 Tracker（可选）</td>
+        <td data-id="1637">硬编码 bootstrap 节点 + DHT 自举</td>
+        <td data-id="1638">BitTorrent DHT 使用硬编码的少量 bootstrap 节点（全球公开），IPFS 使用类似机制，不依赖单一中心化 Tracker。</td>
+    </tr>
+</table>
+
+<p data-id="1639">总体而言，本学习系统的设计刻意选择了"简洁优先"的方向：用 HTTP 替代 UDP、用 Chord 替代 Kademlia、用中心化 Tracker 替代完全去中心化 bootstrap，使协议语义更容易被独立观察和验证。在理解本系统的协议后，学习者可以尝试阅读 Kademlia 原论文（Maymounkov & Mazières, 2002）以及 libp2p 的实现代码，理解生产级系统如何在此基础上应对真实网络的复杂性。</p>
+
+
+<!-- ==================== 版本说明 ==================== -->
+<div data-id="1640" class="version-block">
+    <p data-id="1641"><strong data-id="1642">文档版本信息</strong></p>
+    <table data-id="1643" style="border:none; margin:0; font-size:9.5pt;">
+        <tr data-id="1644">
+            <td data-id="1645" style="border:none; padding:2px 16px 2px 0; font-weight:bold; background:none; color:#555555;">文档版本</td>
+            <td data-id="1646" style="border:none; padding:2px 0; background:none; color:#555555;">v1.0（正式发布）</td>
+        </tr>
+        <tr data-id="1647">
+            <td data-id="1648" style="border:none; padding:2px 16px 2px 0; font-weight:bold; background:none; color:#555555;">设计日期</td>
+            <td data-id="1649" style="border:none; padding:2px 0; background:none; color:#555555;">2026 年 5 月 27 日</td>
+        </tr>
+        <tr data-id="1650">
+            <td data-id="1651" style="border:none; padding:2px 16px 2px 0; font-weight:bold; background:none; color:#555555;">适用范围</td>
+            <td data-id="1652" style="border:none; padding:2px 0; background:none; color:#555555;">学习用 Chord DHT 实现，面向分布式系统学习工程师</td>
+        </tr>
+        <tr data-id="1653">
+            <td data-id="1654" style="border:none; padding:2px 16px 2px 0; font-weight:bold; background:none; color:#555555;">生产适用性</td>
+            <td data-id="1655" style="border:none; padding:2px 0; background:none; color:#555555;">本文档描述的系统设计不适合直接用于生产环境，缺少安全性、性能优化和 NAT 穿透等生产级要求</td>
+        </tr>
+        <tr data-id="1656">
+            <td data-id="1657" style="border:none; padding:2px 16px 2px 0; font-weight:bold; background:none; color:#555555;">核心参数</td>
+            <td data-id="1658" style="border:none; padding:2px 0; background:none; color:#555555;">m = 160（SHA-1），r = 3（后继列表），维护周期 = 60 秒，最大跳数 = 161</td>
+        </tr>
+        <tr data-id="1659">
+            <td data-id="1660" style="border:none; padding:2px 16px 2px 0; font-weight:bold; background:none; color:#555555;">参考文献</td>
+            <td data-id="1661" style="border:none; padding:2px 0; background:none; color:#555555;">Stoica et al., "Chord: A Scalable Peer-to-peer Lookup Service for Internet Applications", ACM SIGCOMM 2001</td>
+        </tr>
+    </table>
+</div>
+
+</body>
+</html>
