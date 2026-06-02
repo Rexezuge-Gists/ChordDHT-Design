@@ -1,0 +1,2077 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>ChordDHT Node — Cloudflare Workers TypeScript 实现设计文档</title>
+    <style>
+        :root { color-scheme: light only; }
+
+        body {
+            font-family: Calibri, sans-serif;
+            font-size: 11pt;
+            line-height: 1.5;
+            color: #000000;
+            background: #ffffff;
+            max-width: 816px;
+            margin: 0 auto;
+            padding: 72px;
+        }
+
+        h1 { font-size: 24pt; font-weight: bold; margin-top: 24pt; margin-bottom: 6pt; line-height: 1.3; color: #1a1a1a; }
+        h2 { font-size: 18pt; font-weight: bold; margin-top: 18pt; margin-bottom: 6pt; line-height: 1.3; color: #1a1a1a; }
+        h3 { font-size: 14pt; font-weight: bold; margin-top: 12pt; margin-bottom: 6pt; line-height: 1.3; color: #1a1a1a; }
+
+        p { margin-top: 0; margin-bottom: 6pt; }
+
+        a { color: #2b5797; text-decoration: underline; }
+
+        table { border-collapse: collapse; width: 100%; margin-top: 12pt; margin-bottom: 12pt; }
+        th, td { border: 1px solid #000000; padding: 6px 8px; text-align: left; vertical-align: top; }
+        th { font-weight: bold; background-color: #e8eef7; }
+
+        ul, ol { margin-top: 6pt; margin-bottom: 6pt; padding-left: 36px; }
+        li { margin-bottom: 3pt; }
+
+        pre {
+            font-family: Consolas, monospace;
+            font-size: 9pt;
+            background-color: #f5f5f5;
+            border: 1px solid #cccccc;
+            border-left: 3px solid #2b5797;
+            padding: 10px 12px;
+            margin: 10pt 0;
+            white-space: pre-wrap;
+            word-break: break-all;
+            line-height: 1.4;
+        }
+
+        code {
+            font-family: Consolas, monospace;
+            font-size: 9.5pt;
+            background-color: #f0f0f0;
+            padding: 1px 4px;
+        }
+
+        .title-block {
+            border-bottom: 2px solid #2b5797;
+            margin-bottom: 24pt;
+            padding-bottom: 12pt;
+        }
+
+        .title-block h1 {
+            margin-top: 0;
+            font-size: 26pt;
+            color: #2b5797;
+        }
+
+        .meta-table {
+            width: 100%;
+            margin-top: 10pt;
+            border-collapse: collapse;
+        }
+        .meta-table td {
+            border: none;
+            padding: 2px 8px 2px 0;
+            font-size: 10pt;
+            color: #444444;
+        }
+        .meta-table td:first-child {
+            font-weight: bold;
+            color: #1a1a1a;
+            width: 130px;
+        }
+
+        .toc-section {
+            background-color: #f0f4fa;
+            border: 1px solid #c0cce0;
+            border-left: 4px solid #2b5797;
+            padding: 12px 16px;
+            margin: 18pt 0;
+        }
+        .toc-section h2 {
+            font-size: 14pt;
+            margin-top: 0;
+            margin-bottom: 8pt;
+            color: #2b5797;
+        }
+        .toc-list {
+            margin: 0;
+            padding-left: 20px;
+        }
+        .toc-list li {
+            margin-bottom: 2pt;
+            font-size: 10.5pt;
+        }
+
+        .callout {
+            border: 1px solid #cccccc;
+            border-left: 3px solid #cccccc;
+            background-color: #f9f9f9;
+            padding: 12px;
+            margin: 12pt 0;
+        }
+        .callout-label {
+            font-weight: bold;
+            margin-bottom: 3pt;
+        }
+        .callout-tip { border-left-color: #2b5797; background-color: #e8eef7; }
+        .callout-warning { border-left-color: #cc0000; background-color: #fce8e8; }
+        .callout-note { border-left-color: #666666; background-color: #f5f5f5; }
+        .callout-important { border-left-color: #cc7a00; background-color: #fff4e0; }
+
+        .chapter-divider {
+            border: none;
+            border-top: 1px solid #c0cce0;
+            margin: 22pt 0 14pt 0;
+        }
+
+        .pending-note {
+            font-style: italic;
+            color: #666666;
+            font-size: 10pt;
+            border: 1px solid #cccccc;
+            border-left: 3px solid #999999;
+            background-color: #f9f9f9;
+            padding: 8px 12px;
+            margin: 10pt 0;
+        }
+
+        .arch-diagram {
+            font-family: Consolas, monospace;
+            font-size: 9pt;
+            background-color: #fafafa;
+            border: 1px solid #cccccc;
+            border-left: 3px solid #2b5797;
+            padding: 12px;
+            margin: 12pt 0;
+            white-space: pre;
+            line-height: 1.5;
+        }
+
+        .section-number {
+            color: #2b5797;
+        }
+
+        @media print { body { padding: 0; max-width: none; } }
+    </style>
+</head>
+<body data-id="0">
+
+<!-- ============================================================
+     封面 / 标题块
+     ============================================================ -->
+<div data-id="1" class="title-block">
+    <h1 data-id="2">ChordDHT Node<br data-id="3">Cloudflare Workers TypeScript 实现设计文档</h1>
+    <table data-id="4" class="meta-table">
+        <tr data-id="5">
+            <td data-id="6">版本</td>
+            <td data-id="7">v1.0-CF · 草案</td>
+        </tr>
+        <tr data-id="8">
+            <td data-id="9">创建日期</td>
+            <td data-id="10">2026 年 5 月 30 日</td>
+        </tr>
+        <tr data-id="11">
+            <td data-id="12">基于</td>
+            <td data-id="13">ChordDHT Go 实现 v3.0（v1.0 + v2.0 + v3.0 设计文档）</td>
+        </tr>
+        <tr data-id="14">
+            <td data-id="15">适用范围</td>
+            <td data-id="16">学习用途</td>
+        </tr>
+        <tr data-id="17">
+            <td data-id="18">文档类型</td>
+            <td data-id="19">技术报告</td>
+        </tr>
+        <tr data-id="20">
+            <td data-id="21">受众</td>
+            <td data-id="22">技术开发者</td>
+        </tr>
+    </table>
+</div>
+
+<!-- ============================================================
+     目录
+     ============================================================ -->
+<div data-id="23" class="toc-section">
+    <h2 data-id="24">目录</h2>
+    <ol data-id="25" class="toc-list">
+        <li data-id="26">Cloudflare 服务选型与限制</li>
+        <li data-id="27">整体架构</li>
+        <li data-id="28">项目结构与 wrangler.toml</li>
+        <li data-id="29">核心数据结构（TypeScript）</li>
+        <li data-id="30">Durable Object：ChordNode 类</li>
+        <li data-id="31">DO Alarm：维护循环</li>
+        <li data-id="32">HTTP 路由层（Worker fetch handler）</li>
+        <li data-id="33">Chord 协议算法实现</li>
+        <li data-id="34">v2.0 身份验证：Web Crypto API</li>
+        <li data-id="35">v3.0 优化实现</li>
+        <li data-id="36">Tracker Client 实现</li>
+        <li data-id="37">DO Storage 持久化策略</li>
+        <li data-id="38">Graceful Leave：适配 API 触发</li>
+        <li data-id="39">配置管理：Secrets 与环境变量</li>
+        <li data-id="40">Go → TypeScript 逐项映射对照表</li>
+        <li data-id="41">已知约束与边缘情况</li>
+    </ol>
+</div>
+
+<hr data-id="42" class="chapter-divider">
+
+<!-- ============================================================
+     第 1 章
+     ============================================================ -->
+<h1 data-id="43"><span data-id="44" class="section-number">第 1 章</span> &nbsp;Cloudflare 服务选型与限制</h1>
+
+<h2 data-id="45">1.1 &nbsp;使用的 CF 服务一览</h2>
+
+<table data-id="46">
+    <thead data-id="47">
+        <tr data-id="48">
+            <th data-id="49">CF 服务</th>
+            <th data-id="50">用途</th>
+            <th data-id="51">必须付费？</th>
+        </tr>
+    </thead>
+    <tbody data-id="52">
+        <tr data-id="53">
+            <td data-id="54"><strong data-id="55">Durable Objects (DO)</strong></td>
+            <td data-id="56">每个 DO 实例 = 一个 Chord 节点，持有全部状态</td>
+            <td data-id="57">❌ 免费计划已包含（SQLite 后端）</td>
+        </tr>
+        <tr data-id="58">
+            <td data-id="59"><strong data-id="60">DO Alarm</strong></td>
+            <td data-id="61">驱动 10s / 15s / 30s / 60s 周期维护，替代 Go <code data-id="62">time.Ticker</code></td>
+            <td data-id="63">❌ 免费计划已包含</td>
+        </tr>
+        <tr data-id="64">
+            <td data-id="65"><strong data-id="66">DO Storage (SQLite)</strong></td>
+            <td data-id="67">持久化 fingerTable、successorList、predecessor、状态机</td>
+            <td data-id="68">❌ 免费计划 1 GB</td>
+        </tr>
+        <tr data-id="69">
+            <td data-id="70"><strong data-id="71">Workers</strong></td>
+            <td data-id="72">HTTP 路由层，将请求转发到对应 DO 实例</td>
+            <td data-id="73">❌ 免费计划已包含</td>
+        </tr>
+        <tr data-id="74">
+            <td data-id="75"><strong data-id="76">Workers Secrets</strong></td>
+            <td data-id="77">存储 node_private_key、node_certificate、ca_public_key</td>
+            <td data-id="78">❌ 免费计划已包含</td>
+        </tr>
+        <tr data-id="79">
+            <td data-id="80"><strong data-id="81">Worker Cron</strong></td>
+            <td data-id="82">不使用——DO Alarm 完全替代</td>
+            <td data-id="83">—</td>
+        </tr>
+        <tr data-id="84">
+            <td data-id="85"><strong data-id="86">Workers KV</strong></td>
+            <td data-id="87">不使用——节点状态用 DO Storage，无需 KV</td>
+            <td data-id="88">—</td>
+        </tr>
+    </tbody>
+</table>
+
+<h2 data-id="89">1.2 &nbsp;关键限制清单（查证版）</h2>
+
+<table data-id="90">
+    <thead data-id="91">
+        <tr data-id="92">
+            <th data-id="93">限制项</th>
+            <th data-id="94">免费计划</th>
+            <th data-id="95">付费计划（$5/月）</th>
+            <th data-id="96">对本项目的影响</th>
+        </tr>
+    </thead>
+    <tbody data-id="97">
+        <tr data-id="98">
+            <td data-id="99">DO CPU 时间 / 请求</td>
+            <td data-id="100">30 ms</td>
+            <td data-id="101">30 s</td>
+            <td data-id="102">⚠️ 免费计划 30 ms 不够用（Ed25519 验签约需 1–5 ms，批量 k=8 并发 fix_fingers 可能超限）；需付费计划</td>
+        </tr>
+        <tr data-id="103">
+            <td data-id="104">DO Alarm 最小间隔</td>
+            <td data-id="105">无下限（毫秒级）</td>
+            <td data-id="106">无下限</td>
+            <td data-id="107">✅ v3.0 的 10 s fix_fingers 周期完全可行</td>
+        </tr>
+        <tr data-id="108">
+            <td data-id="109">DO Alarm CPU 时间</td>
+            <td data-id="110">30 ms</td>
+            <td data-id="111">30 s</td>
+            <td data-id="112">⚠️ 同上，同一 CPU 限制，付费计划 30 s 绰绰有余</td>
+        </tr>
+        <tr data-id="113">
+            <td data-id="114">DO Storage 容量</td>
+            <td data-id="115">1 GB</td>
+            <td data-id="116">10 GB</td>
+            <td data-id="117">✅ 节点状态极小（&lt; 1 MB）</td>
+        </tr>
+        <tr data-id="118">
+            <td data-id="119">Worker subrequest 数 / 调用</td>
+            <td data-id="120">50 次</td>
+            <td data-id="121">1 000 次</td>
+            <td data-id="122">⚠️ 免费计划 50 次对并行 fix_fingers 有影响；付费 1 000 次足够</td>
+        </tr>
+        <tr data-id="123">
+            <td data-id="124">Worker Cron 最小间隔</td>
+            <td data-id="125">1 分钟</td>
+            <td data-id="126">1 分钟</td>
+            <td data-id="127">✅ 不使用 Cron，用 DO Alarm</td>
+        </tr>
+        <tr data-id="128">
+            <td data-id="129">DO 实例并发请求</td>
+            <td data-id="130">串行（单线程）</td>
+            <td data-id="131">串行（单线程）</td>
+            <td data-id="132">✅ 天然消除所有 <code data-id="133">sync.RWMutex</code></td>
+        </tr>
+    </tbody>
+</table>
+
+<div data-id="134" class="callout callout-important">
+    <div data-id="135" class="callout-label">⚠️ 结论：需要 Workers Paid 套餐（$5/月）</div>
+    <p data-id="136" style="margin:0;">原因是免费计划 DO CPU 时间仅 30 ms，Ed25519 签名验证 + 业务逻辑 + 并发 fetch 的总 CPU 耗时会超限。付费计划 30 s CPU / 请求，完全足够。</p>
+</div>
+
+<hr data-id="137" class="chapter-divider">
+
+<!-- ============================================================
+     第 2 章
+     ============================================================ -->
+<h1 data-id="138"><span data-id="139" class="section-number">第 2 章</span> &nbsp;整体架构</h1>
+
+<h2 data-id="140">2.1 &nbsp;架构概览图</h2>
+
+<div data-id="141" class="arch-diagram">外部节点 HTTP 请求
+        │
+        ▼
+┌──────────────────────────────────────────────┐
+│           Cloudflare Worker (fetch handler)   │
+│  路由规则：                                    │
+│  /chord/*  → ChordNode DO 实例               │
+│  /admin/*  → ChordNode DO 实例（管理接口）    │
+└────────────────────┬─────────────────────────┘
+                     │ env.CHORD_NODE.get(id).fetch(req)
+                     ▼
+        ┌────────────────────────┐
+        │   ChordNode (DO 实例)  │  ← 每个 Worker deployment = 一个节点
+        │                        │
+        │  内存状态（热路径）：   │
+        │  ├─ fingerTable[160]   │
+        │  ├─ successorList[5]   │
+        │  ├─ predecessor        │
+        │  ├─ predecessorList[2] │
+        │  ├─ status             │
+        │  ├─ nonceCache Map     │
+        │  ├─ certCache Map      │
+        │  ├─ routingCache LRU   │
+        │  ├─ rttCache Map       │
+        │  └─ maintenanceMode    │
+        │                        │
+        │  DO Storage（持久化）： │
+        │  ├─ finger_table (JSON)│
+        │  ├─ successor_list     │
+        │  ├─ predecessor        │
+        │  ├─ status             │
+        │  ├─ node_config        │
+        │  └─ crl_cache          │
+        │                        │
+        │  DO Alarm（维护循环）： │
+        │  └─ alarm() 每 10~60s  │
+        └────────────────────────┘
+                     │
+                     │ fetch() 到其他节点
+                     ▼
+        https://node-b.example.workers.dev/chord/...</div>
+
+<h2 data-id="142">2.2 &nbsp;部署模型说明</h2>
+
+<p data-id="143">每个 Worker deployment 对应一个 Chord 节点。节点之间通过 HTTPS 互相通信，节点 URI 即 Worker 的 <code data-id="144">workers.dev</code> 子域名或自定义域名，与 Go 实现的 <code data-id="145">https://hostname</code> 完全对应。</p>
+
+<div data-id="146" class="arch-diagram">https://node-a.example.workers.dev  →  部署 A（单个 DO 实例）
+https://node-b.example.workers.dev  →  部署 B（单个 DO 实例）
+
+node_id_A = SHA1("https://node-a.example.workers.dev")
+node_id_B = SHA1("https://node-b.example.workers.dev")</div>
+
+<p data-id="147">每个节点具有以下独立性：</p>
+<ul data-id="148">
+    <li data-id="149">独立的 <code data-id="150">wrangler.toml</code> 配置</li>
+    <li data-id="151">独立的 Secrets（私钥、证书）</li>
+    <li data-id="152">独立的 DO 实例</li>
+</ul>
+
+<hr data-id="153" class="chapter-divider">
+
+<!-- ============================================================
+     第 3 章
+     ============================================================ -->
+<h1 data-id="154"><span data-id="155" class="section-number">第 3 章</span> &nbsp;项目结构与 wrangler.toml</h1>
+
+<h2 data-id="156">3.1 &nbsp;项目目录结构</h2>
+
+<pre data-id="157">chord-node/
+├── wrangler.toml
+├── src/
+│   ├── index.ts              # Worker fetch handler（路由层）
+│   ├── chord-node.ts         # ChordNode Durable Object（核心）
+│   ├── chord/
+│   │   ├── types.ts          # 所有类型定义
+│   │   ├── ring.ts           # 160-bit 环形运算（BigInt）
+│   │   ├── algorithms.ts     # find_successor、closest_preceding 等
+│   │   ├── maintenance.ts    # stabilize、fix_fingers、check_predecessor
+│   │   └── recovery.ts       # ISOLATED 多路径恢复
+│   ├── auth/
+│   │   ├── crypto.ts         # Web Crypto API 封装（Ed25519、SHA-1、SHA-256）
+│   │   ├── cert.ts           # 证书结构、验证、签名消息构造
+│   │   ├── signer.ts         # 请求签名生成
+│   │   ├── verifier.ts       # 请求签名验证中间件
+│   │   ├── nonce-cache.ts    # Nonce 去重缓存
+│   │   └── cert-cache.ts     # 证书缓存（TTL=1hr）
+│   ├── cache/
+│   │   ├── lru-cache.ts      # LRU 缓存实现（路由缓存）
+│   │   └── routing-cache.ts  # RoutingCache，含区间缓存
+│   └── tracker/
+│       └── tracker-client.ts # Tracker Client（本文档重点）
+├── package.json
+└── tsconfig.json</pre>
+
+<h2 data-id="158">3.2 &nbsp;wrangler.toml 配置文件</h2>
+
+<pre data-id="159">name = "chord-node-a"
+main = "src/index.ts"
+compatibility_date = "2025-01-01"
+
+[[durable_objects.bindings]]
+name = "CHORD_NODE"
+class_name = "ChordNode"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["ChordNode"]
+
+[vars]
+NODE_URI = "https://node-a.example.workers.dev"
+NODE_REGION = "us-east-1"
+TRACKER_URL = "https://chord-tracker.example.workers.dev"
+TRACKER_SEED_COUNT = "5"
+AUTH_ENABLED = "true"
+SUCCESSOR_LIST_SIZE = "5"
+MAINTENANCE_ACTIVE_STABILIZE_MS = "15000"
+MAINTENANCE_ACTIVE_FIX_FINGERS_MS = "10000"
+MAINTENANCE_QUIET_STABILIZE_MS = "60000"
+MAINTENANCE_QUIET_FIX_FINGERS_MS = "30000"
+MAX_HOPS = "161"
+HTTP_TIMEOUT_SAME_REGION_MS = "5000"
+HTTP_TIMEOUT_CROSS_REGION_MS = "15000"
+PARALLEL_LOOKUP_ENABLED = "false"
+
+# Secrets（通过 wrangler secret put 设置，不写在此处）：
+# NODE_PRIVATE_KEY_BASE64    Ed25519 私钥，32字节，base64url
+# NODE_CERTIFICATE_JSON      完整 JSON 证书字符串
+# CA_PUBLIC_KEY_BASE64       CA 公钥，32字节，base64url
+# MANUAL_SEEDS               JSON 数组字符串，如 '["https://node-b..."]'</pre>
+
+<hr data-id="160" class="chapter-divider">
+
+<!-- ============================================================
+     第 4 章
+     ============================================================ -->
+<h1 data-id="161"><span data-id="162" class="section-number">第 4 章</span> &nbsp;核心数据结构（TypeScript）</h1>
+
+<p data-id="163">以下为 <code data-id="164">src/chord/types.ts</code> 的完整类型定义，涵盖协议运行所需的全部接口与联合类型。</p>
+
+<pre data-id="165">// src/chord/types.ts
+
+export interface NodeInfo {
+  node_id: string;           // 40位十六进制
+  uri: string;               // 规范化 HTTPS URI
+  status?: NodeStatus;
+  joined_at?: string;        // ISO 8601 UTC
+  certificate?: Certificate; // v2.0
+  region?: string;           // v3.0
+  version?: string;          // v3.0 "3.0"
+  capabilities?: string[];   // v3.0
+}
+
+export type NodeStatus =
+  | "INITIALIZING"
+  | "JOINING"
+  | "ACTIVE"
+  | "LEAVING"
+  | "ISOLATED";
+
+export type MaintenanceMode =
+  | "ACTIVE_MAINTENANCE"
+  | "QUIET_MAINTENANCE";
+
+export interface FingerEntry {
+  index: number;             // 0..159
+  start: string;             // (self.id + 2^i) mod 2^160，40位hex
+  node: NodeInfo;
+  status: "ok" | "suspicious" | "unknown" | "failed";
+  lastVerified: number;      // Unix ms
+  valid: boolean;            // v3.0：false 优先重修
+}
+
+export interface RoutingCacheEntry {
+  targetId: string;
+  resultNode: NodeInfo;
+  cachedAt: number;          // Unix ms
+  intervalStart?: string;    // predecessor.id（exclusive）
+  intervalEnd?: string;      // resultNode.id（inclusive）
+}
+
+export interface RTTEntry {
+  avgRtt: number;            // ms，EWMA α=0.3
+  sampleCount: number;
+  updatedAt: number;         // Unix ms
+}
+
+export interface Certificate {
+  version: 1;
+  node_id: string;
+  uri: string;
+  public_key: string;        // base64url，32字节 Ed25519 公钥
+  issued_at: number;         // Unix 秒
+  expires_at: number;        // Unix 秒
+  signature: string;         // base64url，64字节
+}
+
+export interface CRL {
+  version: 1;
+  updated_at: number;
+  revoked: Array&lt;{ node_id: string; revoked_at: number; reason: string }&gt;;
+  signature: string;
+}
+
+export interface PersistedState {
+  nodeId: string;
+  uri: string;
+  status: NodeStatus;
+  joinedAt: string | null;
+  predecessor: NodeInfo | null;
+  predecessorList: NodeInfo[];          // v3.0，长度2
+  successorList: NodeInfo[];            // v3.0，长度r=5
+  fingerTable: FingerEntry[];           // 160条
+  nextFingerIndex: number;
+  maintenanceMode: MaintenanceMode;
+  lastChangeTime: number;               // Unix ms，用于ACTIVE/QUIET切换
+  maintenanceCycles: number;
+  region: string;
+  crl: CRL | null;
+  alarmScheduled: boolean;
+}</pre>
+
+<h2 data-id="166">4.1 &nbsp;类型结构说明</h2>
+
+<table data-id="167">
+    <thead data-id="168">
+        <tr data-id="169">
+            <th data-id="170">接口 / 类型</th>
+            <th data-id="171">说明</th>
+            <th data-id="172">版本引入</th>
+        </tr>
+    </thead>
+    <tbody data-id="173">
+        <tr data-id="174">
+            <td data-id="175"><code data-id="176">NodeInfo</code></td>
+            <td data-id="177">节点基本身份信息，用于 finger table、successor list 等所有需要引用节点的场景</td>
+            <td data-id="178">v1.0</td>
+        </tr>
+        <tr data-id="179">
+            <td data-id="180"><code data-id="181">NodeStatus</code></td>
+            <td data-id="182">节点生命周期状态机，共 5 个状态</td>
+            <td data-id="183">v1.0</td>
+        </tr>
+        <tr data-id="184">
+            <td data-id="185"><code data-id="186">MaintenanceMode</code></td>
+            <td data-id="187">自适应维护模式（活跃 / 安静），影响 Alarm 触发频率</td>
+            <td data-id="188">v3.0</td>
+        </tr>
+        <tr data-id="189">
+            <td data-id="190"><code data-id="191">FingerEntry</code></td>
+            <td data-id="192">单条 finger 表项，含 valid 标志用于 v3.0 优先修复</td>
+            <td data-id="193">v1.0 / v3.0</td>
+        </tr>
+        <tr data-id="194">
+            <td data-id="195"><code data-id="196">RoutingCacheEntry</code></td>
+            <td data-id="197">路由缓存条目，支持区间命中优化</td>
+            <td data-id="198">v3.0</td>
+        </tr>
+        <tr data-id="199">
+            <td data-id="200"><code data-id="201">RTTEntry</code></td>
+            <td data-id="202">RTT 测量记录，使用 EWMA（α=0.3）平滑</td>
+            <td data-id="203">v3.0</td>
+        </tr>
+        <tr data-id="204">
+            <td data-id="205"><code data-id="206">Certificate</code></td>
+            <td data-id="207">节点身份证书，由 CA 签发，含 Ed25519 公钥</td>
+            <td data-id="208">v2.0</td>
+        </tr>
+        <tr data-id="209">
+            <td data-id="210"><code data-id="211">CRL</code></td>
+            <td data-id="212">证书吊销列表</td>
+            <td data-id="213">v2.0</td>
+        </tr>
+        <tr data-id="214">
+            <td data-id="215"><code data-id="216">PersistedState</code></td>
+            <td data-id="217">DO Storage 持久化的完整节点状态快照</td>
+            <td data-id="218">v1.0</td>
+        </tr>
+    </tbody>
+</table>
+
+<hr data-id="219" class="chapter-divider">
+
+<!-- ============================================================
+     第 5 章
+     ============================================================ -->
+<h1 data-id="220"><span data-id="221" class="section-number">第 5 章</span> &nbsp;Durable Object：ChordNode 类</h1>
+
+<p data-id="222"><code data-id="223">ChordNode</code> 是整个系统的核心，位于 <code data-id="224">src/chord-node.ts</code>。每个 DO 实例代表一个 Chord 节点，其单线程执行模型天然消除了 Go 实现中的所有 <code data-id="225">sync.RWMutex</code>。</p>
+
+<h2 data-id="226">5.1 &nbsp;类骨架与内存状态</h2>
+
+<pre data-id="227">// src/chord-node.ts
+
+import { DurableObject } from "cloudflare:workers";
+import type { Env } from "./index";
+import type {
+  NodeInfo, NodeStatus, MaintenanceMode,
+  FingerEntry, PersistedState
+} from "./chord/types";
+import { computeNodeId, normalizeUri } from "./chord/ring";
+import { runMaintenanceCycle } from "./chord/maintenance";
+import { AuthSigner } from "./auth/signer";
+import { AuthVerifier } from "./auth/verifier";
+import { RoutingCache } from "./cache/routing-cache";
+import { NonceCache } from "./auth/nonce-cache";
+import { CertCache } from "./auth/cert-cache";
+
+export class ChordNode extends DurableObject&lt;Env&gt; {
+  // ── 运行时内存状态（热路径，DO 单线程无需锁） ──────────────────
+  private nodeId: string = "";
+  private uri: string = "";
+  private status: NodeStatus = "INITIALIZING";
+  private joinedAt: string | null = null;
+  private predecessor: NodeInfo | null = null;
+  private predecessorList: NodeInfo[] = [];    // v3.0，长度2
+  private successorList: NodeInfo[] = [];      // v3.0，长度r=5
+  private fingerTable: FingerEntry[] = [];     // 160条
+  private nextFingerIndex: number = 0;
+  private maintenanceMode: MaintenanceMode = "ACTIVE_MAINTENANCE";
+  private lastChangeTime: number = 0;
+  private maintenanceCycles: number = 0;
+  private region: string = "unknown";
+  private alarmScheduled: boolean = false;
+
+  // ── 内存缓存（DO 驱逐后重建，协议容忍） ───────────────────────
+  private nonceCache: NonceCache = new NonceCache();
+  private certCache: CertCache = new CertCache();
+  private routingCache: RoutingCache = new RoutingCache(256);
+  private rttCache: Map&lt;string, { avgRtt: number; sampleCount: number; updatedAt: number }&gt; = new Map();
+  private maintenanceModeActive: boolean = false;
+
+  // ── 认证组件（从 Secrets 初始化） ─────────────────────────────
+  private signer: AuthSigner | null = null;
+  private verifier: AuthVerifier | null = null;
+  private authEnabled: boolean = false;
+
+  constructor(ctx: DurableObjectState, env: Env) {
+    super(ctx, env);
+    this.ctx.blockConcurrencyWhile(() =&gt; this.initialize());
+  }
+
+  // ── initialize()：从 DO Storage 恢复状态 ──────────────────────
+  private async initialize(): Promise&lt;void&gt; {
+    // 1. 从 Storage 加载持久化状态
+    const raw = await this.ctx.storage.get&lt;PersistedState&gt;("node_state");
+    if (raw) {
+      this.nodeId          = raw.nodeId;
+      this.uri             = raw.uri;
+      this.status          = raw.status;
+      this.joinedAt        = raw.joinedAt;
+      this.predecessor     = raw.predecessor;
+      this.predecessorList = raw.predecessorList ?? [];
+      this.successorList   = raw.successorList  ?? [];
+      this.fingerTable     = raw.fingerTable    ?? [];
+      this.nextFingerIndex = raw.nextFingerIndex ?? 0;
+      this.maintenanceMode = raw.maintenanceMode ?? "ACTIVE_MAINTENANCE";
+      this.lastChangeTime  = raw.lastChangeTime  ?? 0;
+      this.maintenanceCycles = raw.maintenanceCycles ?? 0;
+      this.region          = raw.region ?? "unknown";
+      this.alarmScheduled  = raw.alarmScheduled ?? false;
+    } else {
+      // 首次启动：从 env 初始化
+      this.uri    = normalizeUri(this.env.NODE_URI);
+      this.nodeId = await computeNodeId(this.uri);
+      this.region = this.env.NODE_REGION ?? "unknown";
+      this.status = "INITIALIZING";
+    }
+
+    // 2. 初始化认证组件
+    this.authEnabled = this.env.AUTH_ENABLED === "true";
+    if (this.authEnabled) {
+      this.signer   = await AuthSigner.create(this.env);
+      this.verifier = await AuthVerifier.create(this.env);
+    }
+
+    // 3. 确保 Alarm 处于调度状态
+    if (!this.alarmScheduled) {
+      await this.scheduleAlarm(1000); // 1s 后首次触发
+    }
+  }
+
+  // ── fetch()：主请求处理入口 ───────────────────────────────────
+  async fetch(request: Request): Promise&lt;Response&gt; {
+    const url    = new URL(request.url);
+    const path   = url.pathname;
+    const method = request.method;
+
+    // 免认证路径
+    const publicPaths = ["/chord/ping", "/chord/info", "/chord/certificate"];
+    const skipAuth    = publicPaths.some(p =&gt; path.startsWith(p));
+
+    if (this.authEnabled &amp;&amp; !skipAuth &amp;&amp; this.verifier) {
+      const authResult = await this.verifier.verify(request);
+      if (!authResult.ok) {
+        return new Response(
+          JSON.stringify({ error: authResult.reason }),
+          { status: 401, headers: { "Content-Type": "application/json" } }
+        );
+      }
+    }
+
+    // 路由分发
+    switch (true) {
+      // ── Chord 协议接口 ────────────────────────────────────────
+      case path === "/chord/ping"                    &amp;&amp; method === "GET":
+        return this.handlePing();
+      case path === "/chord/info"                    &amp;&amp; method === "GET":
+        return this.handleInfo();
+      case path === "/chord/find-successor"          &amp;&amp; method === "POST":
+        return this.handleFindSuccessor(request);
+      case path === "/chord/predecessor"             &amp;&amp; method === "GET":
+        return this.handleGetPredecessor();
+      case path === "/chord/notify"                  &amp;&amp; method === "POST":
+        return this.handleNotify(request);
+      case path === "/chord/successor-list"          &amp;&amp; method === "GET":
+        return this.handleGetSuccessorList();
+      case path === "/chord/certificate"             &amp;&amp; method === "GET":
+        return this.handleGetCertificate();
+
+      // ── 管理接口 ──────────────────────────────────────────────
+      case path === "/admin/join"                    &amp;&amp; method === "POST":
+        return this.handleJoin(request);
+      case path === "/admin/leave"                   &amp;&amp; method === "POST":
+        return this.handleLeave();
+      case path === "/admin/status"                  &amp;&amp; method === "GET":
+        return this.handleStatus();
+      case path === "/admin/finger-table"            &amp;&amp; method === "GET":
+        return this.handleGetFingerTable();
+      case path === "/admin/maintenance-mode"        &amp;&amp; method === "POST":
+        return this.handleSetMaintenanceMode(request);
+
+      default:
+        return new Response("Not Found", { status: 404 });
+    }
+  }
+
+  // ── alarm()：DO Alarm 入口 ────────────────────────────────────
+  async alarm(): Promise&lt;void&gt; {
+    this.alarmScheduled = false;
+    try {
+      await runMaintenanceCycle(this);
+    } finally {
+      await this.scheduleNextMaintenance();
+    }
+  }
+
+  // ── scheduleAlarm() / scheduleNextMaintenance() ───────────────
+  private async scheduleAlarm(delayMs: number): Promise&lt;void&gt; {
+    await this.ctx.storage.setAlarm(Date.now() + delayMs);
+    this.alarmScheduled = true;
+    await this.persistState();
+  }
+
+  private async scheduleNextMaintenance(): Promise&lt;void&gt; {
+    const isActive = this.maintenanceMode === "ACTIVE_MAINTENANCE";
+    // 使用 fix_fingers 周期作为下一次 Alarm 间隔
+    const ms = isActive
+      ? parseInt(this.env.MAINTENANCE_ACTIVE_FIX_FINGERS_MS  ?? "10000")
+      : parseInt(this.env.MAINTENANCE_QUIET_FIX_FINGERS_MS   ?? "30000");
+    await this.scheduleAlarm(ms);
+  }
+
+  // ── persistState()：状态持久化 ───────────────────────────────
+  async persistState(): Promise&lt;void&gt; {
+    const state: PersistedState = {
+      nodeId:            this.nodeId,
+      uri:               this.uri,
+      status:            this.status,
+      joinedAt:          this.joinedAt,
+      predecessor:       this.predecessor,
+      predecessorList:   this.predecessorList,
+      successorList:     this.successorList,
+      fingerTable:       this.fingerTable,
+      nextFingerIndex:   this.nextFingerIndex,
+      maintenanceMode:   this.maintenanceMode,
+      lastChangeTime:    this.lastChangeTime,
+      maintenanceCycles: this.maintenanceCycles,
+      region:            this.region,
+      crl:               null,
+      alarmScheduled:    this.alarmScheduled,
+    };
+    await this.ctx.storage.put("node_state", state);
+  }
+
+  // ── onTopologyChange()：v3.0 自适应维护触发器 ─────────────────
+  async onTopologyChange(): Promise&lt;void&gt; {
+    this.lastChangeTime = Date.now();
+    if (this.maintenanceMode !== "ACTIVE_MAINTENANCE") {
+      this.maintenanceMode = "ACTIVE_MAINTENANCE";
+      // 重新调度为活跃周期
+      const ms = parseInt(this.env.MAINTENANCE_ACTIVE_FIX_FINGERS_MS ?? "10000");
+      await this.scheduleAlarm(ms);
+    }
+  }
+
+  // ── selfInfo()：自身 NodeInfo ─────────────────────────────────
+  selfInfo(): NodeInfo {
+    return {
+      node_id:  this.nodeId,
+      uri:      this.uri,
+      status:   this.status,
+      region:   this.region,
+      version:  "3.0",
+      capabilities: ["chord-v3"],
+    };
+  }
+}</pre>
+
+<hr data-id="228" class="chapter-divider">
+
+<!-- ============================================================
+     第 6 章
+     ============================================================ -->
+<h1 data-id="229"><span data-id="230" class="section-number">第 6 章</span> &nbsp;DO Alarm：维护循环</h1>
+
+<div data-id="231" class="callout callout-tip">
+    <div data-id="232" class="callout-label">核心机制说明</div>
+    <p data-id="233" style="margin:0;">DO Alarm 是替代 Go <code data-id="234">time.Ticker + goroutine</code> 的核心机制。节点自我续命：每次 <code data-id="235">alarm()</code> 执行完后，调用 <code data-id="236">setAlarm()</code> 设置下一次触发时间，形成永久循环，无需 Worker Cron 参与。</p>
+</div>
+
+<h2 data-id="237">6.1 &nbsp;维护循环完整实现（src/chord/maintenance.ts）</h2>
+
+<pre data-id="238">// src/chord/maintenance.ts
+
+import type { ChordNode } from "../chord-node";
+import type { NodeInfo } from "./types";
+import { inRange } from "./ring";
+
+// ── runMaintenanceCycle()：主维护循环入口 ───────────────────────
+export async function runMaintenanceCycle(node: ChordNode): Promise&lt;void&gt; {
+  const status = node.getStatus();
+
+  // 1. JOIN 流程
+  if (status === "INITIALIZING" || status === "JOINING") {
+    await runJoinFlow(node);
+    return;
+  }
+
+  // 2. ISOLATED 恢复
+  if (status === "ISOLATED") {
+    await runIsolatedRecovery(node);
+    return;
+  }
+
+  // 3. ACTIVE 正常维护周期（8步）
+  if (status === "ACTIVE") {
+    node.incrementMaintenanceCycles();
+
+    // Step 1: check_predecessor
+    await checkPredecessor(node);
+
+    // Step 2: stabilize（每次均执行）
+    await stabilize(node);
+
+    // Step 3: fix_fingers（批量并行）
+    const isActive = node.getMaintenanceMode() === "ACTIVE_MAINTENANCE";
+    const batchSize = isActive ? 8 : 4;
+    await fixFingersBatch(node, batchSize);
+
+    // Step 4: 自适应维护模式切换
+    const quietThreshold = 10; // 10次无拓扑变化 → QUIET
+    const cycles = node.getMaintenanceCycles();
+    const lastChange = node.getLastChangeTime();
+    const now = Date.now();
+    if (isActive &amp;&amp; cycles &gt; quietThreshold &amp;&amp; (now - lastChange) &gt; 120_000) {
+      node.setMaintenanceMode("QUIET_MAINTENANCE");
+    }
+
+    // Step 5: 持久化（仅当状态有变化时）
+    await node.persistState();
+  }
+}
+
+// ── checkPredecessor()：v3.0 分层超时、快速崩溃检测 ─────────────
+export async function checkPredecessor(node: ChordNode): Promise&lt;void&gt; {
+  const pred = node.getPredecessor();
+  if (!pred) return;
+
+  const region      = node.getRegion();
+  const predRegion  = pred.region ?? "unknown";
+  const sameRegion  = region === predRegion;
+
+  // v3.0：同区域更短超时，跨区域更长超时
+  const timeoutMs = sameRegion
+    ? parseInt(node.env.HTTP_TIMEOUT_SAME_REGION_MS  ?? "5000")
+    : parseInt(node.env.HTTP_TIMEOUT_CROSS_REGION_MS ?? "15000");
+
+  try {
+    const controller = new AbortController();
+    const timer      = setTimeout(() =&gt; controller.abort(), timeoutMs);
+    const resp = await node.rpcFetch(pred.uri + "/chord/ping", {
+      method: "GET",
+      signal: controller.signal,
+    });
+    clearTimeout(timer);
+
+    if (!resp.ok) {
+      node.markPredecessorFailed();
+    }
+  } catch {
+    // 超时或网络错误 → 前驱失效
+    node.markPredecessorFailed();
+  }
+}
+
+// ── stabilize()：稳定化协议 ──────────────────────────────────────
+export async function stabilize(node: ChordNode): Promise&lt;void&gt; {
+  const successorList = node.getSuccessorList();
+  if (successorList.length === 0) return;
+
+  let successor = successorList[0];
+
+  // 1. 获取 successor 的前驱
+  try {
+    const resp = await node.rpcFetch(successor.uri + "/chord/predecessor", {
+      method: "GET",
+    });
+    if (resp.ok) {
+      const body = await resp.json&lt;{ predecessor: NodeInfo | null }&gt;();
+      const x    = body.predecessor;
+
+      // 2. 发现新节点插入：x 在 (self, successor) 区间内
+      if (x &amp;&amp; inRange(x.node_id, node.selfInfo().node_id, successor.node_id, false, false)) {
+        successor = x;
+        node.setSuccessorList([x, ...successorList.slice(0, 4)]);
+        await node.onTopologyChange();
+      }
+    }
+  } catch {
+    // successor 无响应 → 切换到备用
+    const backup = successorList.slice(1);
+    if (backup.length &gt; 0) {
+      node.setSuccessorList(backup);
+      await node.onTopologyChange();
+    } else {
+      node.setStatus("ISOLATED");
+    }
+    return;
+  }
+
+  // 3. 发送 notify（告知 successor 自己可能是其前驱）
+  try {
+    await node.rpcFetch(successor.uri + "/chord/notify", {
+      method: "POST",
+      body:   JSON.stringify({ node: node.selfInfo() }),
+      headers: { "Content-Type": "application/json" },
+    });
+  } catch {
+    // notify 失败不影响协议正确性
+  }
+
+  // 4. 刷新 successor_list
+  try {
+    const resp = await node.rpcFetch(successor.uri + "/chord/successor-list", {
+      method: "GET",
+    });
+    if (resp.ok) {
+      const body = await resp.json&lt;{ successorList: NodeInfo[] }&gt;();
+      const r    = parseInt(node.env.SUCCESSOR_LIST_SIZE ?? "5");
+      node.setSuccessorList([successor, ...body.successorList].slice(0, r));
+    }
+  } catch {
+    // 忽略，保持现有列表
+  }
+}
+
+// ── fixFingersBatch()：v3.0 批量并行修复 ─────────────────────────
+export async function fixFingersBatch(node: ChordNode, batchSize: number): Promise&lt;void&gt; {
+  const ft       = node.getFingerTable();
+  const selfId   = node.selfInfo().node_id;
+  const maxHops  = parseInt(node.env.MAX_HOPS ?? "161");
+
+  // 优先修复 valid=false 的条目，其次按指数跨越顺序（高位优先）
+  const invalidIndices = ft
+    .filter(e =&gt; !e.valid)
+    .map(e =&gt; e.index)
+    .sort((a, b) =&gt; b - a); // 高位优先
+
+  const validIndices = Array.from({ length: 160 }, (_, i) =&gt; i)
+    .filter(i =&gt; !invalidIndices.includes(i))
+    .sort((a, b) =&gt; b - a);
+
+  const priorityQueue = [...invalidIndices, ...validIndices].slice(0, batchSize);
+
+  // 并行查询
+  const tasks = priorityQueue.map(async (i) =&gt; {
+    const start = ft[i].start;
+    try {
+      const result = await node.findSuccessorIterative(start, maxHops);
+      node.updateFingerEntry(i, result, true);
+    } catch {
+      node.updateFingerEntry(i, ft[i].node, false);
+    }
+  });
+
+  await Promise.allSettled(tasks);
+}</pre>
+
+<hr data-id="239" class="chapter-divider">
+
+<!-- ============================================================
+     第 7 章
+     ============================================================ -->
+<h1 data-id="240"><span data-id="241" class="section-number">第 7 章</span> &nbsp;HTTP 路由层（Worker fetch handler）</h1>
+
+<div data-id="242" class="callout callout-note">
+    <div data-id="243" class="callout-label">设计原则</div>
+    <p data-id="244" style="margin:0;">Worker 层极薄——只做一件事：将所有请求转发给唯一的 DO 实例（名为 <code data-id="245">"singleton"</code>）。这是因为每个 <code data-id="246">wrangler deploy</code> 对应一个节点，整个 Worker 里只存在一个 Chord 节点 DO 实例。</p>
+</div>
+
+<h2 data-id="247">7.1 &nbsp;完整实现（src/index.ts）</h2>
+
+<pre data-id="248">// src/index.ts
+
+export interface Env {
+  CHORD_NODE: DurableObjectNamespace;
+  NODE_URI: string;
+  NODE_REGION: string;
+  TRACKER_URL: string;
+  TRACKER_SEED_COUNT: string;
+  AUTH_ENABLED: string;
+  SUCCESSOR_LIST_SIZE: string;
+  NODE_PRIVATE_KEY_BASE64: string;
+  NODE_CERTIFICATE_JSON: string;
+  CA_PUBLIC_KEY_BASE64: string;
+  MANUAL_SEEDS: string;
+}
+
+export { ChordNode } from "./chord-node";
+
+export default {
+  async fetch(request: Request, env: Env): Promise&lt;Response&gt; {
+    const url  = new URL(request.url);
+    const doId = env.CHORD_NODE.idFromName("singleton");
+    const stub = env.CHORD_NODE.get(doId);
+    return stub.fetch(request);
+  },
+} satisfies ExportedHandler&lt;Env&gt;;</pre>
+
+<h2 data-id="249">7.2 &nbsp;路由设计说明</h2>
+
+<table data-id="250">
+    <thead data-id="251">
+        <tr data-id="252">
+            <th data-id="253">路径前缀</th>
+            <th data-id="254">分类</th>
+            <th data-id="255">说明</th>
+        </tr>
+    </thead>
+    <tbody data-id="256">
+        <tr data-id="257">
+            <td data-id="258"><code data-id="259">/chord/ping</code></td>
+            <td data-id="260">协议接口（免认证）</td>
+            <td data-id="261">存活探测，用于 checkPredecessor</td>
+        </tr>
+        <tr data-id="262">
+            <td data-id="263"><code data-id="264">/chord/info</code></td>
+            <td data-id="265">协议接口（免认证）</td>
+            <td data-id="266">返回节点基本信息</td>
+        </tr>
+        <tr data-id="267">
+            <td data-id="268"><code data-id="269">/chord/certificate</code></td>
+            <td data-id="270">协议接口（免认证）</td>
+            <td data-id="271">返回节点证书，用于验签</td>
+        </tr>
+        <tr data-id="272">
+            <td data-id="273"><code data-id="274">/chord/find-successor</code></td>
+            <td data-id="275">协议接口（需认证）</td>
+            <td data-id="276">迭代查找后继节点</td>
+        </tr>
+        <tr data-id="277">
+            <td data-id="278"><code data-id="279">/chord/predecessor</code></td>
+            <td data-id="280">协议接口（需认证）</td>
+            <td data-id="281">获取前驱节点，用于 stabilize</td>
+        </tr>
+        <tr data-id="282">
+            <td data-id="283"><code data-id="284">/chord/notify</code></td>
+            <td data-id="285">协议接口（需认证）</td>
+            <td data-id="286">通知前驱候选，用于 stabilize</td>
+        </tr>
+        <tr data-id="287">
+            <td data-id="288"><code data-id="289">/chord/successor-list</code></td>
+            <td data-id="290">协议接口（需认证）</td>
+            <td data-id="291">获取后继列表</td>
+        </tr>
+        <tr data-id="292">
+            <td data-id="293"><code data-id="294">/admin/join</code></td>
+            <td data-id="295">管理接口</td>
+            <td data-id="296">触发 Join 流程</td>
+        </tr>
+        <tr data-id="297">
+            <td data-id="298"><code data-id="299">/admin/leave</code></td>
+            <td data-id="300">管理接口</td>
+            <td data-id="301">触发 Graceful Leave</td>
+        </tr>
+        <tr data-id="302">
+            <td data-id="303"><code data-id="304">/admin/status</code></td>
+            <td data-id="305">管理接口</td>
+            <td data-id="306">查询节点运行状态</td>
+        </tr>
+        <tr data-id="307">
+            <td data-id="308"><code data-id="309">/admin/finger-table</code></td>
+            <td data-id="310">管理接口</td>
+            <td data-id="311">查看完整 finger 表</td>
+        </tr>
+        <tr data-id="312">
+            <td data-id="313"><code data-id="314">/admin/maintenance-mode</code></td>
+            <td data-id="315">管理接口</td>
+            <td data-id="316">手动切换维护模式</td>
+        </tr>
+    </tbody>
+</table>
+
+<hr data-id="317" class="chapter-divider">
+
+<!-- ============================================================
+     第 8 章
+     ============================================================ -->
+<h1 data-id="318"><span data-id="319" class="section-number">第 8 章</span> &nbsp;Chord 协议算法实现</h1>
+
+<h2 data-id="320">8.1 &nbsp;160-bit 环形运算（src/chord/ring.ts）</h2>
+
+<pre data-id="321">// src/chord/ring.ts
+// 所有 ID 均为 40 位十六进制字符串（160 bit），内部运算使用 BigInt
+
+const RING_SIZE = 2n ** 160n;
+
+export function hexToBigInt(hex: string): bigint {
+  return BigInt("0x" + hex);
+}
+
+export function bigIntToHex(n: bigint): string {
+  return n.toString(16).padStart(40, "0");
+}
+
+// 规范化 URI：去除末尾斜杠，转小写 scheme+host
+export function normalizeUri(raw: string): string {
+  const u = new URL(raw);
+  return `${u.protocol}//${u.hostname}${u.port ? ":" + u.port : ""}`;
+}
+
+// 计算节点 ID：SHA-1(uri)
+export async function computeNodeId(uri: string): Promise&lt;string&gt; {
+  const encoded = new TextEncoder().encode(uri);
+  const hashBuf = await crypto.subtle.digest("SHA-1", encoded);
+  return Array.from(new Uint8Array(hashBuf))
+    .map(b =&gt; b.toString(16).padStart(2, "0"))
+    .join("");
+}
+
+// 顺时针距离：从 a 到 b 的顺时针弧长
+export function clockwiseDistance(a: string, b: string): bigint {
+  const ia = hexToBigInt(a);
+  const ib = hexToBigInt(b);
+  return ib &gt;= ia ? ib - ia : RING_SIZE - ia + ib;
+}
+
+// inRange：id 是否在 (start, end] 区间内（半开半闭，顺时针）
+export function inRange(
+  id: string,
+  start: string,
+  end: string,
+  startInclusive = false,
+  endInclusive   = true
+): boolean {
+  const i  = hexToBigInt(id);
+  const s  = hexToBigInt(start);
+  const e  = hexToBigInt(end);
+
+  const afterStart  = startInclusive ? i &gt;= s : i &gt; s;
+  const beforeEnd   = endInclusive   ? i &lt;= e : i &lt; e;
+
+  if (s &lt; e) {
+    return afterStart &amp;&amp; beforeEnd;
+  } else if (s &gt; e) {
+    // 跨越 0 点
+    return afterStart || beforeEnd;
+  } else {
+    // s === e：全环（仅单节点情况）
+    return true;
+  }
+}
+
+// inRangeOpen：(start, end) 双开区间
+export function inRangeOpen(id: string, start: string, end: string): boolean {
+  return inRange(id, start, end, false, false);
+}</pre>
+
+<h2 data-id="322">8.2 &nbsp;find_successor 迭代模式（src/chord/algorithms.ts）</h2>
+
+<pre data-id="323">// src/chord/algorithms.ts
+
+import type { ChordNode } from "../chord-node";
+import type { NodeInfo } from "./types";
+import { inRange, clockwiseDistance, hexToBigInt } from "./ring";
+
+// ── localFindSuccessor()：本地快速判断 ───────────────────────────
+export function localFindSuccessor(node: ChordNode, targetId: string): NodeInfo | null {
+  const self      = node.selfInfo();
+  const succList  = node.getSuccessorList();
+  if (succList.length === 0) return null;
+
+  const successor = succList[0];
+
+  // target 在 (self, successor] 区间内 → successor 即是答案
+  if (inRange(targetId, self.node_id, successor.node_id)) {
+    return successor;
+  }
+  return null;
+}
+
+// ── computeScore()：v3.0 延迟感知路由评分 ────────────────────────
+// 综合评分 = ID接近度(0.6) + RTT分数(0.3) + Region亲和(0.1)
+function computeScore(
+  node: ChordNode,
+  candidate: NodeInfo,
+  targetId: string
+): number {
+  const dist     = clockwiseDistance(candidate.node_id, targetId);
+  const maxDist  = 2n ** 160n;
+  const idScore  = 1 - Number(dist * 1_000_000n / maxDist) / 1_000_000;
+
+  const rtt      = node.getRtt(candidate.uri);
+  const rttScore = rtt === null ? 0.5 : Math.max(0, 1 - rtt / 1000);
+
+  const region      = node.getRegion();
+  const candRegion  = candidate.region ?? "unknown";
+  const regionScore = region === candRegion ? 1.0 : 0.0;
+
+  return idScore * 0.6 + rttScore * 0.3 + regionScore * 0.1;
+}
+
+// ── closestPrecedingNode()：v3.0 延迟感知，综合评分选最优 ─────────
+export function closestPrecedingNode(node: ChordNode, targetId: string): NodeInfo {
+  const self     = node.selfInfo();
+  const ft       = node.getFingerTable();
+
+  // 候选集：finger table 中在 (self, target) 区间内的节点
+  const candidates: NodeInfo[] = [];
+  for (let i = 159; i &gt;= 0; i--) {
+    const entry = ft[i];
+    if (entry.status === "failed" || !entry.valid) continue;
+    if (inRange(entry.node.node_id, self.node_id, targetId, false, false)) {
+      candidates.push(entry.node);
+    }
+  }
+
+  if (candidates.length === 0) return self;
+
+  // 按评分排序，取最高分
+  candidates.sort((a, b) =&gt; computeScore(node, b, targetId) - computeScore(node, a, targetId));
+  return candidates[0];
+}
+
+// ── findSuccessorIterative()：迭代循环，含路由缓存、环路检测 ───────
+export async function findSuccessorIterative(
+  node: ChordNode,
+  targetId: string,
+  maxHops: number
+): Promise&lt;NodeInfo&gt; {
+  // 1. 路由缓存命中
+  const cached = node.routingCache.lookup(targetId);
+  if (cached) return cached;
+
+  // 2. 本地快速判断
+  const local = localFindSuccessor(node, targetId);
+  if (local) {
+    node.routingCache.store(targetId, local, node.selfInfo().node_id, local.node_id);
+    return local;
+  }
+
+  // 3. 迭代查找
+  let current     = node.selfInfo();
+  const visited   = new Set&lt;string&gt;();
+  let hops        = 0;
+
+  while (hops &lt; maxHops) {
+    // 环路检测
+    if (visited.has(current.node_id)) {
+      throw new Error(`Routing loop detected at ${current.node_id} after ${hops} hops`);
+    }
+    visited.add(current.node_id);
+    hops++;
+
+    // 向 current 查询
+    let resp: Response;
+    try {
+      resp = await node.rpcFetch(current.uri + "/chord/find-successor", {
+        method:  "POST",
+        body:    JSON.stringify({ target_id: targetId }),
+        headers: { "Content-Type": "application/json" },
+      });
+    } catch {
+      // 节点失联 → 标记失败，退出
+      node.markNodeFailed(current);
+      throw new Error(`Node unreachable: ${current.uri}`);
+    }
+
+    if (!resp.ok) throw new Error(`find-successor HTTP ${resp.status}`);
+
+    const body = await resp.json&lt;{ found: boolean; successor?: NodeInfo; next_hop?: NodeInfo }&gt;();
+
+    if (body.found &amp;&amp; body.successor) {
+      const result = body.successor;
+      node.routingCache.store(targetId, result, current.node_id, result.node_id);
+      return result;
+    }
+
+    if (body.next_hop) {
+      current = body.next_hop;
+    } else {
+      throw new Error("Invalid find-successor response: no found and no next_hop");
+    }
+  }
+
+  throw new Error(`find-successor exceeded maxHops=${maxHops}`);
+}</pre>
+
+<hr data-id="324" class="chapter-divider">
+
+<!-- ============================================================
+     第 9 章
+     ============================================================ -->
+<h1 data-id="325"><span data-id="326" class="section-number">第 9 章</span> &nbsp;v2.0 身份验证：Web Crypto API</h1>
+
+<h2 data-id="327">9.1 &nbsp;crypto.ts — Ed25519 / SHA 封装</h2>
+
+<pre data-id="328">// src/auth/crypto.ts
+// Web Crypto API 封装，仅使用原生 SubtleCrypto，无第三方依赖
+
+// ── Ed25519 密钥导入 ─────────────────────────────────────────────
+export async function importPrivateKey(base64url: string): Promise&lt;CryptoKey&gt; {
+  const raw = base64urlToBytes(base64url);
+  // Ed25519 私钥为 32 字节原始格式
+  return crypto.subtle.importKey(
+    "raw",
+    raw,
+    { name: "Ed25519" },
+    false,
+    ["sign"]
+  );
+}
+
+export async function importPublicKey(base64url: string): Promise&lt;CryptoKey&gt; {
+  const raw = base64urlToBytes(base64url);
+  return crypto.subtle.importKey(
+    "raw",
+    raw,
+    { name: "Ed25519" },
+    true,
+    ["verify"]
+  );
+}
+
+// ── 签名 / 验签 ──────────────────────────────────────────────────
+export async function signEd25519(
+  key: CryptoKey,
+  message: BufferSource
+): Promise&lt;string&gt; {
+  const sig = await crypto.subtle.sign("Ed25519", key, message);
+  return bytesToBase64url(new Uint8Array(sig));
+}
+
+export async function verifyEd25519(
+  key: CryptoKey,
+  signature: string,
+  message: BufferSource
+): Promise&lt;boolean&gt; {
+  const sigBytes = base64urlToBytes(signature);
+  return crypto.subtle.verify("Ed25519", key, sigBytes, message);
+}
+
+// ── 哈希 ─────────────────────────────────────────────────────────
+export async function sha256Hex(input: string): Promise&lt;string&gt; {
+  const encoded = new TextEncoder().encode(input);
+  const hash    = await crypto.subtle.digest("SHA-256", encoded);
+  return Array.from(new Uint8Array(hash))
+    .map(b =&gt; b.toString(16).padStart(2, "0"))
+    .join("");
+}
+
+export async function sha1Hex(input: string): Promise&lt;string&gt; {
+  const encoded = new TextEncoder().encode(input);
+  const hash    = await crypto.subtle.digest("SHA-1", encoded);
+  return Array.from(new Uint8Array(hash))
+    .map(b =&gt; b.toString(16).padStart(2, "0"))
+    .join("");
+}
+
+// ── Base64url 工具 ───────────────────────────────────────────────
+export function base64urlToBytes(b64: string): Uint8Array {
+  const padded = b64.replace(/-/g, "+").replace(/_/g, "/")
+    + "=".repeat((4 - b64.length % 4) % 4);
+  const binary = atob(padded);
+  return Uint8Array.from(binary, c =&gt; c.charCodeAt(0));
+}
+
+export function bytesToBase64url(bytes: Uint8Array): string {
+  return btoa(String.fromCharCode(...bytes))
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=/g, "");
+}</pre>
+
+<h2 data-id="329">9.2 &nbsp;signer.ts — 请求签名生成</h2>
+
+<pre data-id="330">// src/auth/signer.ts
+// 签名消息规范 v2.0 §4.2
+
+import type { Env } from "../index";
+import { importPrivateKey, signEd25519 } from "./crypto";
+
+export class AuthSigner {
+  private constructor(
+    private readonly privateKey: CryptoKey,
+    private readonly nodeId: string,
+    private readonly certificate: string
+  ) {}
+
+  static async create(env: Env): Promise&lt;AuthSigner&gt; {
+    const privKey = await importPrivateKey(env.NODE_PRIVATE_KEY_BASE64);
+    const cert    = JSON.parse(env.NODE_CERTIFICATE_JSON);
+    return new AuthSigner(privKey, cert.node_id, env.NODE_CERTIFICATE_JSON);
+  }
+
+  // signRequest()：生成签名 Headers
+  async signRequest(
+    method: string,
+    url: string,
+    body: string | null
+  ): Promise&lt;Record&lt;string, string&gt;&gt; {
+    const timestamp = Math.floor(Date.now() / 1000).toString();
+    const nonce     = crypto.randomUUID().replace(/-/g, "");
+
+    // 签名消息：METHOD\nURL\nTIMESTAMP\nNONCE[\nSHA256(body)]
+    const parts = [method.toUpperCase(), url, timestamp, nonce];
+    if (body) {
+      const bodyHash = await sha256Hex(body);
+      parts.push(bodyHash);
+    }
+    const message   = parts.join("\n");
+    const msgBytes  = new TextEncoder().encode(message);
+    const signature = await signEd25519(this.privateKey, msgBytes);
+
+    return {
+      "X-Chord-Node-Id":  this.nodeId,
+      "X-Chord-Timestamp": timestamp,
+      "X-Chord-Nonce":    nonce,
+      "X-Chord-Signature": signature,
+    };
+  }
+}
+
+async function sha256Hex(input: string): Promise&lt;string&gt; {
+  const encoded = new TextEncoder().encode(input);
+  const hash    = await crypto.subtle.digest("SHA-256", encoded);
+  return Array.from(new Uint8Array(hash))
+    .map(b =&gt; b.toString(16).padStart(2, "0"))
+    .join("");
+}</pre>
+
+<h2 data-id="331">9.3 &nbsp;verifier.ts — 请求签名验证中间件</h2>
+
+<pre data-id="332">// src/auth/verifier.ts
+
+import type { Env } from "../index";
+import { importPublicKey, verifyEd25519 } from "./crypto";
+import { base64urlToBytes } from "./crypto";
+import type { Certificate } from "../chord/types";
+
+export interface VerifyResult {
+  ok: boolean;
+  reason?: string;
+}
+
+export class AuthVerifier {
+  private readonly caPublicKey: CryptoKey;
+  private readonly nonceCache: Map&lt;string, number&gt; = new Map();
+  private readonly certCache:  Map&lt;string, { cert: Certificate; key: CryptoKey; cachedAt: number }&gt; = new Map();
+
+  private constructor(caPublicKey: CryptoKey) {
+    this.caPublicKey = caPublicKey;
+  }
+
+  static async create(env: Env): Promise&lt;AuthVerifier&gt; {
+    const caKey = await importPublicKey(env.CA_PUBLIC_KEY_BASE64);
+    return new AuthVerifier(caKey);
+  }
+
+  // verify()：7步验证流程
+  async verify(request: Request): Promise&lt;VerifyResult&gt; {
+    // Step 1: Header 完整性检查
+    const nodeId    = request.headers.get("X-Chord-Node-Id");
+    const timestamp = request.headers.get("X-Chord-Timestamp");
+    const nonce     = request.headers.get("X-Chord-Nonce");
+    const signature = request.headers.get("X-Chord-Signature");
+
+    if (!nodeId || !timestamp || !nonce || !signature) {
+      return { ok: false, reason: "Missing auth headers" };
+    }
+
+    // Step 2: 时间窗口（±5 分钟）
+    const now = Math.floor(Date.now() / 1000);
+    const ts  = parseInt(timestamp);
+    if (Math.abs(now - ts) &gt; 300) {
+      return { ok: false, reason: "Timestamp out of window" };
+    }
+
+    // Step 3: Nonce 去重
+    const nonceKey = `${nodeId}:${nonce}`;
+    if (this.nonceCache.has(nonceKey)) {
+      return { ok: false, reason: "Duplicate nonce" };
+    }
+
+    // Step 4: 获取并验证证书
+    let pubKey: CryptoKey;
+    const cached = this.certCache.get(nodeId);
+    if (cached &amp;&amp; Date.now() - cached.cachedAt &lt; 3_600_000) {
+      pubKey = cached.key;
+    } else {
+      // 从远端拉取证书（仅限非公开路径）
+      const certResp = await fetch(
+        `https://${new URL(request.url).hostname}/chord/certificate`
+      );
+      if (!certResp.ok) return { ok: false, reason: "Cannot fetch certificate" };
+
+      const cert = await certResp.json&lt;Certificate&gt;();
+      const validCert = await this.validateCertificate(cert, nodeId);
+      if (!validCert.ok) return { ok: false, reason: validCert.reason };
+
+      pubKey = await importPublicKey(cert.public_key);
+      this.certCache.set(nodeId, { cert, key: pubKey, cachedAt: Date.now() });
+    }
+
+    // Step 5: 请求签名验证
+    const body      = request.body ? await request.clone().text() : null;
+    const parts     = [request.method.toUpperCase(), request.url, timestamp, nonce];
+    if (body) {
+      const bodyHash = await sha256Hex(body);
+      parts.push(bodyHash);
+    }
+    const message  = parts.join("\n");
+    const msgBytes = new TextEncoder().encode(message);
+    const valid    = await verifyEd25519(pubKey, signature, msgBytes);
+
+    if (!valid) return { ok: false, reason: "Invalid signature" };
+
+    // Step 6: Nonce 入缓存（有效期 10 分钟）
+    this.nonceCache.set(nonceKey, Date.now());
+    // 懒清理过期 nonce
+    if (this.nonceCache.size &gt; 10_000) {
+      const cutoff = Date.now() - 600_000;
+      for (const [k, t] of this.nonceCache) {
+        if (t &lt; cutoff) this.nonceCache.delete(k);
+      }
+    }
+
+    return { ok: true };
+  }
+
+  // validateCertificate()：格式检查、node_id 一致性、有效期、CA 签名验证
+  private async validateCertificate(
+    cert: Certificate,
+    expectedNodeId: string
+  ): Promise&lt;VerifyResult&gt; {
+    // 格式检查
+    if (!cert.version || !cert.node_id || !cert.uri || !cert.public_key
+        || !cert.issued_at || !cert.expires_at || !cert.signature) {
+      return { ok: false, reason: "Malformed certificate" };
+    }
+
+    // node_id 一致性
+    if (cert.node_id !== expectedNodeId) {
+      return { ok: false, reason: "Certificate node_id mismatch" };
+    }
+
+    // 有效期
+    const now = Math.floor(Date.now() / 1000);
+    if (now &lt; cert.issued_at || now &gt; cert.expires_at) {
+      return { ok: false, reason: "Certificate expired or not yet valid" };
+    }
+
+    // CA 签名验证
+    // 签名消息：VERSION\nNODE_ID\nURI\nPUBLIC_KEY\nISSUED_AT\nEXPIRES_AT
+    const message = [
+      cert.version, cert.node_id, cert.uri,
+      cert.public_key, cert.issued_at, cert.expires_at
+    ].join("\n");
+    const msgBytes = new TextEncoder().encode(message);
+    const valid    = await verifyEd25519(this.caPublicKey, cert.signature, msgBytes);
+
+    if (!valid) return { ok: false, reason: "Certificate CA signature invalid" };
+    return { ok: true };
+  }
+}
+
+async function sha256Hex(input: string): Promise&lt;string&gt; {
+  const encoded = new TextEncoder().encode(input);
+  const hash    = await crypto.subtle.digest("SHA-256", encoded);
+  return Array.from(new Uint8Array(hash))
+    .map(b =&gt; b.toString(16).padStart(2, "0"))
+    .join("");
+}</pre>
+
+<hr data-id="333" class="chapter-divider">
+
+<!-- ============================================================
+     第 10 章
+     ============================================================ -->
+<h1 data-id="334"><span data-id="335" class="section-number">第 10 章</span> &nbsp;v3.0 优化实现</h1>
+
+<h2 data-id="336">10.1 &nbsp;LRU 路由缓存（src/cache/routing-cache.ts）</h2>
+
+<p data-id="337"><code data-id="338">RoutingCache</code> 是 v3.0 的核心性能优化，支持精确匹配和区间命中两种查找模式，显著减少 find_successor 的网络跳数。</p>
+
+<pre data-id="339">// src/cache/routing-cache.ts
+
+import type { NodeInfo } from "../chord/types";
+import { hexToBigInt } from "../chord/ring";
+
+interface CacheEntry {
+  targetId:      string;
+  resultNode:    NodeInfo;
+  cachedAt:      number;       // Unix ms
+  intervalStart: string | undefined;   // predecessor.id（exclusive）
+  intervalEnd:   string | undefined;   // resultNode.id（inclusive）
+}
+
+const TTL_MS = 60_000; // 1 分钟
+
+export class RoutingCache {
+  private readonly capacity: number;
+  // 使用 Map 维护 LRU 顺序（插入顺序 = 最近访问在末尾）
+  private readonly map: Map&lt;string, CacheEntry&gt; = new Map();
+  // 区间索引：resultNode.id → CacheEntry[]
+  private readonly intervalIndex: Map&lt;string, CacheEntry[]&gt; = new Map();
+
+  constructor(capacity = 256) {
+    this.capacity = capacity;
+  }
+
+  // lookup()：精确匹配 + 区间命中
+  lookup(targetId: string): NodeInfo | null {
+    const now = Date.now();
+
+    // 1. 精确匹配
+    const exact = this.map.get(targetId);
+    if (exact) {
+      if (now - exact.cachedAt &gt; TTL_MS) {
+        this.evict(targetId);
+        return null;
+      }
+      this.touch(targetId, exact);
+      return exact.resultNode;
+    }
+
+    // 2. 区间命中：遍历区间索引，检查 targetId 是否在 (start, end] 内
+    const targetBig = hexToBigInt(targetId);
+    for (const [endId, entries] of this.intervalIndex) {
+      for (const entry of entries) {
+        if (!entry.intervalStart || !entry.intervalEnd) continue;
+        if (now - entry.cachedAt &gt; TTL_MS) {
+          this.evict(entry.targetId);
+          continue;
+        }
+
+        const startBig = hexToBigInt(entry.intervalStart);
+        const endBig   = hexToBigInt(entry.intervalEnd);
+
+        let hit = false;
+        if (startBig &lt; endBig) {
+          hit = targetBig &gt; startBig &amp;&amp; targetBig &lt;= endBig;
+        } else {
+          // 跨越 0 点
+          hit = targetBig &gt; startBig || targetBig &lt;= endBig;
+        }
+
+        if (hit) {
+          return entry.resultNode;
+        }
+      }
+    }
+
+    return null;
+  }
+
+  // store()：LRU 驱逐 + 区间索引维护
+  store(
+    targetId:      string,
+    resultNode:    NodeInfo,
+    intervalStart?: string,
+    intervalEnd?:   string
+  ): void {
+    // LRU 驱逐
+    if (this.map.size &gt;= this.capacity &amp;&amp; !this.map.has(targetId)) {
+      const oldestKey = this.map.keys().next().value;
+      if (oldestKey) this.evict(oldestKey);
+    }
+
+    const entry: CacheEntry = {
+      targetId, resultNode,
+      cachedAt: Date.now(),
+      intervalStart, intervalEnd,
+    };
+
+    this.map.delete(targetId); // 先删，确保重新插到末尾
+    this.map.set(targetId, entry);
+
+    // 维护区间索引
+    if (intervalEnd) {
+      if (!this.intervalIndex.has(intervalEnd)) {
+        this.intervalIndex.set(intervalEnd, []);
+      }
+      this.intervalIndex.get(intervalEnd)!.push(entry);
+    }
+  }
+
+  private touch(key: string, entry: CacheEntry): void {
+    this.map.delete(key);
+    this.map.set(key, entry);
+  }
+
+  private evict(key: string): void {
+    const entry = this.map.get(key);
+    if (entry?.intervalEnd) {
+      const list = this.intervalIndex.get(entry.intervalEnd);
+      if (list) {
+        const idx = list.indexOf(entry);
+        if (idx !== -1) list.splice(idx, 1);
+        if (list.length === 0) this.intervalIndex.delete(entry.intervalEnd);
+      }
+    }
+    this.map.delete(key);
+  }
+}</pre>
+
+<hr data-id="340" class="chapter-divider">
+
+<!-- ============================================================
+     第 11 章
+     ============================================================ -->
+<h1 data-id="341"><span data-id="342" class="section-number">第 11 章</span> &nbsp;Tracker Client 实现</h1>
+
+<div data-id="343" class="pending-note">
+    <strong data-id="344">实现位置：</strong><code data-id="345">src/tracker/tracker-client.ts</code><br data-id="346"><br data-id="347">
+    <strong data-id="348">功能职责：</strong>TrackerClient 负责向 Tracker 注册节点、获取种子节点、上报心跳、拉取 CRL。具体职责包括：
+    <ul data-id="349" style="margin-top: 6pt; margin-bottom: 0;">
+        <li data-id="350">注册（<code data-id="351">register</code>）：节点 Join 时向 Tracker 上报自身 NodeInfo 与证书</li>
+        <li data-id="352">获取种子（<code data-id="353">getSeeds</code>）：从 Tracker 拉取已知活跃节点列表，用于 Join 引导</li>
+        <li data-id="354">心跳（<code data-id="355">heartbeat</code>）：周期性上报存活状态</li>
+        <li data-id="356">注销（<code data-id="357">deregister</code>）：Graceful Leave 时从 Tracker 移除自身</li>
+        <li data-id="358">拉取 CRL（<code data-id="359">fetchCRL</code>）：获取最新证书吊销列表</li>
+    </ul>
+    <br data-id="360">（详细实现见配套实现文档）
+</div>
+
+<hr data-id="361" class="chapter-divider">
+
+<!-- ============================================================
+     第 12 章
+     ============================================================ -->
+<h1 data-id="362"><span data-id="363" class="section-number">第 12 章</span> &nbsp;DO Storage 持久化策略</h1>
+
+<div data-id="364" class="pending-note">
+    <strong data-id="365">持久化策略概述：</strong><br data-id="366"><br data-id="367">
+    <ul data-id="368" style="margin-top: 6pt; margin-bottom: 0;">
+        <li data-id="369"><strong data-id="370">写入时机：</strong>状态变更后立即持久化（<code data-id="371">persistState()</code>），保证 DO 驱逐后可完整恢复</li>
+        <li data-id="372"><strong data-id="373">批量写入优化：</strong>单次 <code data-id="374">storage.put()</code> 写入整个 <code data-id="375">PersistedState</code> JSON，避免多次 I/O</li>
+        <li data-id="376"><strong data-id="377">冷启动恢复流程：</strong><code data-id="378">blockConcurrencyWhile(initialize)</code> 确保首个请求到达前状态已恢复完毕</li>
+        <li data-id="379"><strong data-id="380">内存缓存重建：</strong>nonceCache、certCache、routingCache、rttCache 均为内存态，DO 驱逐后按需重建，协议自身容错</li>
+    </ul>
+    <br data-id="381">（详细实现见配套实现文档）
+</div>
+
+<hr data-id="382" class="chapter-divider">
+
+<!-- ============================================================
+     第 13 章
+     ============================================================ -->
+<h1 data-id="383"><span data-id="384" class="section-number">第 13 章</span> &nbsp;Graceful Leave：适配 API 触发</h1>
+
+<div data-id="385" class="pending-note">
+    <strong data-id="386">触发方式：</strong>通过 <code data-id="387">POST /admin/leave</code> 接口触发<br data-id="388"><br data-id="389">
+    <strong data-id="390">执行流程：</strong>
+    <ol data-id="391" style="margin-top: 6pt; margin-bottom: 0;">
+        <li data-id="392">状态转移：<code data-id="393">ACTIVE → LEAVING</code></li>
+        <li data-id="394">停止接受新 Chord 协议请求（返回 503）</li>
+        <li data-id="395">向前驱通知后继变更</li>
+        <li data-id="396">向后继传递前驱指针</li>
+        <li data-id="397">从 Tracker 注销</li>
+        <li data-id="398">状态转移：<code data-id="399">LEAVING → INITIALIZING</code>，清空持久化状态</li>
+    </ol>
+    <br data-id="400">（详细实现见配套实现文档）
+</div>
+
+<hr data-id="401" class="chapter-divider">
+
+<!-- ============================================================
+     第 14 章
+     ============================================================ -->
+<h1 data-id="402"><span data-id="403" class="section-number">第 14 章</span> &nbsp;配置管理：Secrets 与环境变量</h1>
+
+<h2 data-id="404">14.1 &nbsp;配置分类</h2>
+
+<table data-id="405">
+    <thead data-id="406">
+        <tr data-id="407">
+            <th data-id="408">配置项</th>
+            <th data-id="409">存储方式</th>
+            <th data-id="410">说明</th>
+        </tr>
+    </thead>
+    <tbody data-id="411">
+        <tr data-id="412">
+            <td data-id="413"><code data-id="414">NODE_PRIVATE_KEY_BASE64</code></td>
+            <td data-id="415"><code data-id="416">wrangler secret put</code></td>
+            <td data-id="417">Ed25519 私钥，32 字节，base64url 编码。不可写入 wrangler.toml</td>
+        </tr>
+        <tr data-id="418">
+            <td data-id="419"><code data-id="420">NODE_CERTIFICATE_JSON</code></td>
+            <td data-id="421"><code data-id="422">wrangler secret put</code></td>
+            <td data-id="423">完整 JSON 证书字符串，由 CA 签发</td>
+        </tr>
+        <tr data-id="424">
+            <td data-id="425"><code data-id="426">CA_PUBLIC_KEY_BASE64</code></td>
+            <td data-id="427"><code data-id="428">wrangler secret put</code></td>
+            <td data-id="429">CA 公钥，32 字节，base64url 编码，用于验证其他节点证书</td>
+        </tr>
+        <tr data-id="430">
+            <td data-id="431"><code data-id="432">MANUAL_SEEDS</code></td>
+            <td data-id="433"><code data-id="434">wrangler secret put</code></td>
+            <td data-id="435">JSON 数组字符串，手动指定种子节点，如 <code data-id="436">'["https://node-b..."]'</code></td>
+        </tr>
+        <tr data-id="437">
+            <td data-id="438"><code data-id="439">NODE_URI</code></td>
+            <td data-id="440"><code data-id="441">wrangler.toml [vars]</code></td>
+            <td data-id="442">本节点的 HTTPS URI，用于计算 node_id</td>
+        </tr>
+        <tr data-id="443">
+            <td data-id="444"><code data-id="445">NODE_REGION</code></td>
+            <td data-id="446"><code data-id="447">wrangler.toml [vars]</code></td>
+            <td data-id="448">地域标识，用于 v3.0 延迟感知路由评分（Region 亲和权重 0.1）</td>
+        </tr>
+        <tr data-id="449">
+            <td data-id="450"><code data-id="451">TRACKER_URL</code></td>
+            <td data-id="452"><code data-id="453">wrangler.toml [vars]</code></td>
+            <td data-id="454">Tracker 服务地址</td>
+        </tr>
+        <tr data-id="455">
+            <td data-id="456"><code data-id="457">AUTH_ENABLED</code></td>
+            <td data-id="458"><code data-id="459">wrangler.toml [vars]</code></td>
+            <td data-id="460"><code data-id="461">"true"</code> 启用 v2.0 身份验证，<code data-id="462">"false"</code> 跳过（测试用）</td>
+        </tr>
+    </tbody>
+</table>
+
+<div data-id="463" class="callout callout-warning">
+    <div data-id="464" class="callout-label">⚠️ 安全提示</div>
+    <p data-id="465" style="margin:0;">所有敏感配置（私钥、证书、CA 公钥、手动种子）必须通过 <code data-id="466">wrangler secret put</code> 注入，<strong data-id="467">绝对不能</strong>写入 <code data-id="468">wrangler.toml</code> 或提交至版本控制系统。Secrets 在 Cloudflare 后端加密存储，仅在运行时通过 <code data-id="469">env</code> 对象注入。</p>
+</div>
+
+<div data-id="470" class="pending-note">（详细配置校验与运行时读取逻辑见配套实现文档）</div>
+
+<hr data-id="471" class="chapter-divider">
+
+<!-- ============================================================
+     第 15 章
+     ============================================================ -->
+<h1 data-id="472"><span data-id="473" class="section-number">第 15 章</span> &nbsp;Go → TypeScript 逐项映射对照表</h1>
+
+<table data-id="474">
+    <thead data-id="475">
+        <tr data-id="476">
+            <th data-id="477">Go 实现</th>
+            <th data-id="478">TypeScript / CF Workers 对应</th>
+            <th data-id="479">说明</th>
+        </tr>
+    </thead>
+    <tbody data-id="480">
+        <tr data-id="481">
+            <td data-id="482"><code data-id="483">sync.RWMutex</code></td>
+            <td data-id="484">无需——DO 单线程串行执行</td>
+            <td data-id="485">DO 天然消除所有并发锁</td>
+        </tr>
+        <tr data-id="486">
+            <td data-id="487"><code data-id="488">time.Ticker</code> + <code data-id="489">goroutine</code></td>
+            <td data-id="490">DO Alarm（<code data-id="491">ctx.storage.setAlarm()</code>）</td>
+            <td data-id="492">Alarm 自我续命形成永久循环</td>
+        </tr>
+        <tr data-id="493">
+            <td data-id="494"><code data-id="495">goroutine</code>（并发任务）</td>
+            <td data-id="496"><code data-id="497">Promise.allSettled(tasks)</code></td>
+            <td data-id="498">fixFingersBatch 等并行操作</td>
+        </tr>
+        <tr data-id="499">
+            <td data-id="500"><code data-id="501">context.Context</code> + 超时</td>
+            <td data-id="502"><code data-id="503">AbortController</code> + <code data-id="504">setTimeout</code></td>
+            <td data-id="505">HTTP 请求超时控制</td>
+        </tr>
+        <tr data-id="506">
+            <td data-id="507"><code data-id="508">crypto/ed25519</code></td>
+            <td data-id="509"><code data-id="510">crypto.subtle</code>（Ed25519）</td>
+            <td data-id="511">Web Crypto API，原生支持</td>
+        </tr>
+        <tr data-id="512">
+            <td data-id="513"><code data-id="514">crypto/sha1</code></td>
+            <td data-id="515"><code data-id="516">crypto.subtle.digest("SHA-1")</code></td>
+            <td data-id="517">计算节点 ID</td>
+        </tr>
+        <tr data-id="518">
+            <td data-id="519"><code data-id="520">math/big.Int</code>（160-bit 环运算）</td>
+            <td data-id="521"><code data-id="522">BigInt</code>（原生）</td>
+            <td data-id="523">JavaScript 原生大整数，无需依赖库</td>
+        </tr>
+        <tr data-id="524">
+            <td data-id="525"><code data-id="526">net/http</code> 服务器</td>
+            <td data-id="527">DO <code data-id="528">fetch()</code> handler</td>
+            <td data-id="529">请求在 DO 内串行处理</td>
+        </tr>
+        <tr data-id="530">
+            <td data-id="531"><code data-id="532">net/http</code> 客户端</td>
+            <td data-id="533">全局 <code data-id="534">fetch()</code>（带签名）</td>
+            <td data-id="535">通过 <code data-id="536">rpcFetch</code> 封装自动签名</td>
+        </tr>
+        <tr data-id="537">
+            <td data-id="538"><code data-id="539">os.Getenv()</code></td>
+            <td data-id="540"><code data-id="541">env.VAR_NAME</code></td>
+            <td data-id="542">通过 <code data-id="543">wrangler.toml [vars]</code> 或 Secrets 注入</td>
+        </tr>
+        <tr data-id="544">
+            <td data-id="545">内存状态（struct 字段）</td>
+            <td data-id="546">DO 实例属性（<code data-id="547">private</code>）</td>
+            <td data-id="548">热路径，DO 存活期间常驻内存</td>
+        </tr>
+        <tr data-id="549">
+            <td data-id="550">文件持久化 / 数据库</td>
+            <td data-id="551">DO Storage（SQLite）</td>
+            <td data-id="552"><code data-id="553">ctx.storage.get/put</code>，冷启动恢复</td>
+        </tr>
+        <tr data-id="554">
+            <td data-id="555"><code data-id="556">log.Printf</code></td>
+            <td data-id="557"><code data-id="558">console.log</code></td>
+            <td data-id="559">输出到 Cloudflare Workers 日志流</td>
+        </tr>
+        <tr data-id="560">
+            <td data-id="561">二进制部署</td>
+            <td data-id="562"><code data-id="563">wrangler deploy</code></td>
+            <td data-id="564">每次 deploy 对应一个节点版本</td>
+        </tr>
+    </tbody>
+</table>
+
+<div data-id="565" class="pending-note">（完整逐函数映射对照表见配套实现文档）</div>
+
+<hr data-id="566" class="chapter-divider">
+
+<!-- ============================================================
+     第 16 章
+     ============================================================ -->
+<h1 data-id="567"><span data-id="568" class="section-number">第 16 章</span> &nbsp;已知约束与边缘情况</h1>
+
+<h2 data-id="569">16.1 &nbsp;已知约束汇总</h2>
+
+<table data-id="570">
+    <thead data-id="571">
+        <tr data-id="572">
+            <th data-id="573">约束项</th>
+            <th data-id="574">影响</th>
+            <th data-id="575">缓解措施</th>
+        </tr>
+    </thead>
+    <tbody data-id="576">
+        <tr data-id="577">
+            <td data-id="578">免费计划 DO CPU 30 ms 限制</td>
+            <td data-id="579">Ed25519 验签 + 并发 fix_fingers 超限</td>
+            <td data-id="580">升级 Workers Paid（$5/月），CPU 上限提升至 30 s</td>
+        </tr>
+        <tr data-id="581">
+            <td data-id="582">免费计划 subrequest 50 次 / 调用</td>
+            <td data-id="583">fixFingersBatch(k=8) 并发受限</td>
+            <td data-id="584">付费计划 1 000 次；或减小批量大小</td>
+        </tr>
+        <tr data-id="585">
+            <td data-id="586">DO 驱逐后内存缓存丢失</td>
+            <td data-id="587">nonceCache、certCache、routingCache、rttCache 重置</td>
+            <td data-id="588">协议本身容错；冷启动后缓存自动重建</td>
+        </tr>
+        <tr data-id="589">
+            <td data-id="590">DO 驱逐 nonce 缓存丢失</td>
+            <td data-id="591">重放窗口期内理论上可重放</td>
+            <td data-id="592">时间窗口（±5 min）限制重放范围；可接受的学习用途风险</td>
+        </tr>
+        <tr data-id="593">
+            <td data-id="594">单 Worker deployment = 单节点</td>
+            <td data-id="595">多节点需多次 <code data-id="596">wrangler deploy</code></td>
+            <td data-id="597">设计约束，符合 Chord 去中心化部署模型</td>
+        </tr>
+        <tr data-id="598">
+            <td data-id="599">同一 workers.dev 子域名冲突</td>
+            <td data-id="600">测试环境两个节点共用同一 worker 名时 node_id 冲突</td>
+            <td data-id="601">每个节点使用唯一 <code data-id="602">name</code>（wrangler.toml）或自定义域名</td>
+        </tr>
+        <tr data-id="603">
+            <td data-id="604">DO Alarm 精度</td>
+            <td data-id="605">Alarm 实际触发时间可能比预期晚数秒</td>
+            <td data-id="606">维护周期对秒级抖动不敏感，可接受</td>
+        </tr>
+        <tr data-id="607">
+            <td data-id="608">BigInt 序列化</td>
+            <td data-id="609"><code data-id="610">JSON.stringify</code> 不支持 BigInt</td>
+            <td data-id="611">所有 ID 均以 40 位 hex 字符串存储和传输，运算时临时转换</td>
+        </tr>
+        <tr data-id="612">
+            <td data-id="613">Ed25519 浏览器兼容性</td>
+            <td data-id="614">Cloudflare Workers 运行时已全面支持</td>
+            <td data-id="615">仅需注意本地测试环境（Node.js 18+ 支持）</td>
+        </tr>
+    </tbody>
+</table>
+
+<div data-id="616" class="pending-note">（完整边缘情况分析与测试矩阵见配套实现文档）</div>
+
+<hr data-id="617" class="chapter-divider">
+
+<!-- ============================================================
+     文档结尾
+     ============================================================ -->
+<p data-id="618" style="margin-top: 24pt; font-size: 9.5pt; color: #666666; text-align: center;">
+    ChordDHT Node — Cloudflare Workers TypeScript 实现设计文档 &nbsp;·&nbsp; v1.0-CF 草案 &nbsp;·&nbsp; 2026 年 5 月 30 日 &nbsp;·&nbsp; 仅供学习用途
+</p>
+
+</body>
+</html>
