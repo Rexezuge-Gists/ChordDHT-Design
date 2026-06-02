@@ -1,0 +1,909 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>Chord DHT 网络优化扩展设计文档 v3.0</title>
+    <style>
+        :root { color-scheme: light only; }
+
+        body {
+            font-family: Calibri, sans-serif;
+            font-size: 11pt;
+            line-height: 1.5;
+            color: #000000;
+            background: #ffffff;
+            max-width: 816px;
+            margin: 0 auto;
+            padding: 72px;
+        }
+
+        h1 { font-size: 22pt; font-weight: bold; color: #1a1a1a; margin-top: 24pt; margin-bottom: 6pt; line-height: 1.3; }
+        h2 { font-size: 15pt; font-weight: bold; color: #1a1a1a; margin-top: 18pt; margin-bottom: 6pt; line-height: 1.3; }
+        h3 { font-size: 12pt; font-weight: bold; color: #1a1a1a; margin-top: 12pt; margin-bottom: 6pt; line-height: 1.3; }
+
+        p { margin-top: 0; margin-bottom: 6pt; }
+
+        a { color: #2b5797; text-decoration: underline; }
+
+        table { border-collapse: collapse; width: 100%; margin-top: 12pt; margin-bottom: 12pt; }
+        th, td { border: 1px solid #aaaaaa; padding: 6px 10px; text-align: left; vertical-align: top; font-size: 10pt; }
+        th { font-weight: bold; background-color: #dce6f1; color: #1a1a1a; }
+        tr:nth-child(even) td { background-color: #f7f9fc; }
+
+        ul, ol { margin-top: 6pt; margin-bottom: 6pt; padding-left: 36px; }
+        li { margin-bottom: 3pt; }
+
+        pre {
+            font-family: Consolas, monospace;
+            font-size: 9pt;
+            background-color: #f4f4f4;
+            border: 1px solid #cccccc;
+            border-left: 3px solid #2b5797;
+            padding: 10px 14px;
+            margin: 10pt 0;
+            white-space: pre-wrap;
+            word-break: break-all;
+            line-height: 1.5;
+        }
+
+        code {
+            font-family: Consolas, monospace;
+            font-size: 9.5pt;
+            background-color: #f4f4f4;
+            padding: 1px 4px;
+        }
+
+        .cover-title-block {
+            text-align: center;
+            margin-bottom: 36pt;
+            padding-bottom: 18pt;
+            border-bottom: 2px solid #2b5797;
+        }
+
+        .cover-title-block h1 {
+            font-size: 24pt;
+            color: #1a1a1a;
+            margin-bottom: 4pt;
+        }
+
+        .cover-title-block .subtitle {
+            font-size: 13pt;
+            color: #2b5797;
+            font-weight: bold;
+            margin-bottom: 6pt;
+        }
+
+        .cover-title-block .doc-meta {
+            font-size: 10pt;
+            color: #555555;
+            margin-top: 6pt;
+        }
+
+        .section-divider {
+            border: none;
+            border-top: 1px solid #cccccc;
+            margin: 18pt 0;
+        }
+
+        .toc-title {
+            font-size: 16pt;
+            font-weight: bold;
+            color: #1a1a1a;
+            margin-bottom: 10pt;
+            padding-bottom: 4pt;
+            border-bottom: 1px solid #2b5797;
+        }
+
+        .toc-item-h1 {
+            font-size: 11pt;
+            font-weight: bold;
+            margin: 4pt 0 2pt 0;
+            color: #1a1a1a;
+        }
+
+        .toc-item-h2 {
+            font-size: 10pt;
+            margin: 2pt 0 2pt 18pt;
+            color: #333333;
+        }
+
+        .toc-dots {
+            display: inline-block;
+        }
+
+        .callout {
+            border: 1px solid #cccccc;
+            border-left: 3px solid #cccccc;
+            background-color: #f9f9f9;
+            padding: 10px 14px;
+            margin: 10pt 0;
+        }
+        .callout-label {
+            font-weight: bold;
+            margin-bottom: 3pt;
+            font-size: 10pt;
+        }
+        .callout-note { border-left-color: #2b5797; background-color: #eef3fb; }
+        .callout-warning { border-left-color: #cc0000; background-color: #fce8e8; }
+        .callout-important { border-left-color: #cc7a00; background-color: #fff4e0; }
+
+        .chapter-heading {
+            font-size: 17pt;
+            font-weight: bold;
+            color: #2b5797;
+            margin-top: 28pt;
+            margin-bottom: 8pt;
+            padding-bottom: 4pt;
+            border-bottom: 2px solid #2b5797;
+        }
+
+        .api-block {
+            border: 1px solid #cccccc;
+            background-color: #fafafa;
+            padding: 10px 14px;
+            margin: 10pt 0;
+        }
+
+        .api-method {
+            font-family: Consolas, monospace;
+            font-size: 10pt;
+            font-weight: bold;
+            color: #2b5797;
+        }
+
+        .page-break {
+            page-break-before: always;
+        }
+
+        @media print {
+            body { padding: 0; max-width: none; }
+            .callout { background: none; }
+            a { color: inherit; }
+        }
+    </style>
+</head>
+<body data-id="0">
+
+<!-- ===== COVER ===== -->
+<div data-id="1" class="cover-title-block">
+    <p data-id="2" style="font-size:10pt; color:#888888; margin-bottom:4pt;">分布式系统设计系列</p>
+    <h1 data-id="3">Chord DHT 网络优化扩展设计文档</h1>
+    <p data-id="4" class="subtitle">版本 v3.0 · 草案</p>
+    <p data-id="5" class="doc-meta">创建日期：2026 年 5 月 29 日 &nbsp;|&nbsp; 作者：Otter 🦦 &nbsp;|&nbsp; 适用范围：学习用途</p>
+</div>
+
+<!-- ===== 封面信息表 ===== -->
+<p data-id="6" class="toc-title">封面信息</p>
+<table data-id="7">
+    <tr data-id="8"><th data-id="9" style="width:32%;">字段</th><th data-id="10">内容</th></tr>
+    <tr data-id="11"><td data-id="12">文档版本</td><td data-id="13">v3.0</td></tr>
+    <tr data-id="14"><td data-id="15">创建日期</td><td data-id="16">2026 年 5 月 29 日</td></tr>
+    <tr data-id="17"><td data-id="18">基于版本</td><td data-id="19">v2.0（Chord DHT 身份验证扩展设计文档）</td></tr>
+    <tr data-id="20"><td data-id="21">文档状态</td><td data-id="22">草案</td></tr>
+    <tr data-id="23"><td data-id="24">适用对象</td><td data-id="25">在 v2.0 基础上进行网络性能优化的工程师</td></tr>
+    <tr data-id="26"><td data-id="27">适用范围</td><td data-id="28">学习用途，不适合直接用于生产环境</td></tr>
+    <tr data-id="29"><td data-id="30">新增机制</td><td data-id="31">自适应维护调度、延迟感知路由、并行手指修复、路由缓存、动态后继列表</td></tr>
+</table>
+
+<hr data-id="32" class="section-divider">
+
+<!-- ===== 目录 ===== -->
+<p data-id="33" class="toc-title">目录</p>
+
+<p data-id="34" class="toc-item-h1">第一章：优化背景与设计目标</p>
+<p data-id="35" class="toc-item-h2">1.1 背景</p>
+<p data-id="36" class="toc-item-h2">1.2 设计目标</p>
+<p data-id="37" class="toc-item-h2">1.3 不在设计范围内</p>
+<p data-id="38" class="toc-item-h1">第二章：v1/v2 核心瓶颈分析</p>
+<p data-id="39" class="toc-item-h2">2.1 手指表修复瓶颈 &nbsp;2.2 崩溃感知迟滞 &nbsp;2.3 后继列表容量不足 &nbsp;2.4 无延迟感知的路由 &nbsp;2.5 无路由缓存</p>
+<p data-id="40" class="toc-item-h1">第三章：优化一 —— 缩短拓扑收敛时间</p>
+<p data-id="41" class="toc-item-h2">3.1 自适应维护周期 &nbsp;3.2 批量并行 fix_fingers &nbsp;3.3 快速崩溃检测</p>
+<p data-id="42" class="toc-item-h1">第四章：优化二 —— 增强容错能力</p>
+<p data-id="43" class="toc-item-h2">4.1 动态后继列表长度 &nbsp;4.2 前驱链备份 &nbsp;4.3 多路径 ISOLATED 状态恢复 &nbsp;4.4 后继切换的数据责任转移</p>
+<p data-id="44" class="toc-item-h1">第五章：优化三 —— 降低跨地域延迟</p>
+<p data-id="45" class="toc-item-h2">5.1 Region 标签 &nbsp;5.2 RTT 测量与缓存 &nbsp;5.3 延迟感知路由 &nbsp;5.4 分层超时策略 &nbsp;5.5 Piggyback 信息携带</p>
+<p data-id="46" class="toc-item-h1">第六章：优化四 —— 提升路由效率</p>
+<p data-id="47" class="toc-item-h2">6.1 路由结果 LRU 缓存 &nbsp;6.2 并行 find_successor &nbsp;6.3 手指表预热 &nbsp;6.4 手指表条目有效性标记</p>
+<p data-id="48" class="toc-item-h1">第七章：数据结构变更</p>
+<p data-id="49" class="toc-item-h1">第八章：API 变更规范</p>
+<p data-id="50" class="toc-item-h1">第九章：周期维护任务变更</p>
+<p data-id="51" class="toc-item-h1">第十章：边缘情况与处理策略</p>
+<p data-id="52" class="toc-item-h1">第十一章：新增配置参数参考</p>
+<p data-id="53" class="toc-item-h1">第十二章：实现建议（Go 语言）</p>
+
+<hr data-id="54" class="section-divider">
+
+<!-- ===== 第一章 ===== -->
+<h1 data-id="55" class="chapter-heading">第一章：优化背景与设计目标</h1>
+
+<h2 data-id="56">1.1 背景</h2>
+<p data-id="57">v1.0 建立了基于 Chord 算法的分布式哈希表核心骨架，采用 RESTful HTTP + JSON、SHA-1（m=160）、后继列表长度 r=3，周期维护任务固定 60 秒一轮。v2.0 在此基础上引入了 Ed25519 节点身份验证体系，保障了节点准入的可信性。</p>
+<p data-id="58">然而，v1/v2 的核心设计目标是"正确性"与"可读性"，对"性能"未作系统性优化。在以下场景中，现有架构存在明显短板：</p>
+<ul data-id="59">
+    <li data-id="60"><strong data-id="61">多节点快速加入/离开</strong>时，手指表收敛极慢（最长 160 分钟）；</li>
+    <li data-id="62"><strong data-id="63">节点崩溃</strong>后，后继链需 2 个以上稳定化周期才能感知，恢复迟缓；</li>
+    <li data-id="64"><strong data-id="65">跨地域部署</strong>时，迭代路由每跳叠加网络 RTT，整体查找延迟不可控；</li>
+    <li data-id="66"><strong data-id="67">热点键查找</strong>无任何缓存，相同路径反复全程路由。</li>
+</ul>
+<p data-id="68">v3.0 针对上述四个维度系统性地提出优化方案，在不破坏 v1/v2 协议骨架（ID 空间、一致性哈希、RESTful API 约定、Ed25519 签名体系）的前提下，通过算法与参数两个层面进行扩展。</p>
+
+<h2 data-id="69">1.2 设计目标</h2>
+<table data-id="70">
+    <tr data-id="71"><th data-id="72">优化维度</th><th data-id="73">v1/v2 现状</th><th data-id="74">v3.0 目标</th></tr>
+    <tr data-id="75"><td data-id="76">拓扑收敛时间</td><td data-id="77">手指表全刷需 ~160 分钟</td><td data-id="78">活跃期 &lt;5 分钟完成全刷</td></tr>
+    <tr data-id="79"><td data-id="80">节点崩溃感知</td><td data-id="81">2+ 个周期（≥120 秒）</td><td data-id="82">&lt;30 秒内切换后继</td></tr>
+    <tr data-id="83"><td data-id="84">后继列表容量</td><td data-id="85">固定 r=3</td><td data-id="86">默认 r=5，支持动态调整</td></tr>
+    <tr data-id="87"><td data-id="88">跨地域路由延迟</td><td data-id="89">无拓扑感知，盲目转发</td><td data-id="90">优先同地域节点，RTT 加权</td></tr>
+    <tr data-id="91"><td data-id="92">路由缓存</td><td data-id="93">无</td><td data-id="94">LRU 缓存，TTL=30s，1000 条</td></tr>
+    <tr data-id="95"><td data-id="96">手指表修复</td><td data-id="97">串行，每轮 1 条</td><td data-id="98">批量并行，每轮修复 k 条</td></tr>
+</table>
+
+<h2 data-id="99">1.3 不在设计范围内</h2>
+<ul data-id="100">
+    <li data-id="101">数据持久化与键值存储引擎</li>
+    <li data-id="102">TLS 传输层加密（在 v2.0 范围之外）</li>
+    <li data-id="103">跨 CA 的联邦信任体系</li>
+    <li data-id="104">生产级负载均衡与服务发现</li>
+    <li data-id="105">拜占庭容错（节点可能伪造路由信息）</li>
+</ul>
+
+<hr data-id="106" class="section-divider">
+
+<!-- ===== 第二章 ===== -->
+<h1 data-id="107" class="chapter-heading">第二章：v1/v2 核心瓶颈分析</h1>
+
+<h2 data-id="108">2.1 手指表修复瓶颈</h2>
+<p data-id="109"><strong data-id="110">v1.0 原始机制：</strong> <code data-id="111">fix_fingers</code> 每次维护周期（60 秒）仅修复手指表中的下一条目（round-robin，next 索引递增 1）。对于 m=160，完整修复一轮手指表需要 160 个周期，即 <strong data-id="112">160 × 60s = 9600 秒（约 160 分钟）</strong>。</p>
+<p data-id="113"><strong data-id="114">问题影响：</strong> 在节点频繁加入/离开的场景（如测试环境批量启动），手指表长期包含过期条目，导致路由跳数显著增加，O(log N) 的理论效率退化。</p>
+
+<h2 data-id="115">2.2 崩溃感知迟滞</h2>
+<p data-id="116"><strong data-id="117">v1.0 原始机制：</strong> <code data-id="118">check_predecessor</code> 每 60 秒执行一次，向前驱发送 <code data-id="119">/ping</code>；<code data-id="120">stabilize</code> 每 60 秒执行一次，向后继的 predecessor 询问是否有更近节点。</p>
+<p data-id="121"><strong data-id="122">问题影响：</strong></p>
+<ul data-id="123">
+    <li data-id="124">前驱崩溃感知：最快 60 秒，最慢 120 秒</li>
+    <li data-id="125">后继崩溃感知：stabilize 调用后继 <code data-id="126">/predecessor</code> 失败，才切换到后继列表第二项。若崩溃发生在周期末，需等待 60 秒 + 重试超时（5 秒）才切换，整个感知+切换链最长 <strong data-id="127">约 125 秒</strong></li>
+</ul>
+
+<h2 data-id="128">2.3 后继列表容量不足</h2>
+<p data-id="129">v1.0 固定 r=3。在网络规模 N=100 时，连续崩溃 3 个后继节点的概率不低。r=3 仅能容忍 2 个后继同时崩溃（至少保留 1 个存活）。</p>
+
+<h2 data-id="130">2.4 无延迟感知的路由</h2>
+<p data-id="131"><strong data-id="132">v1.0 路由模式：</strong> <code data-id="133">find_successor</code> 采用迭代模式，每一跳选择 finger table 中 ID 最接近目标的节点，不考虑网络延迟。</p>
+<p data-id="134"><strong data-id="135">跨地域影响：</strong> 假设美国节点 A 查询欧洲键 K，路由路径可能反复穿越大西洋（A→欧洲节点→美国节点→欧洲节点），每跳叠加 100~200ms RTT，总延迟在 O(log N) 跳下可达秒级。</p>
+
+<h2 data-id="136">2.5 无路由缓存</h2>
+<p data-id="137">每次 <code data-id="138">find_successor</code> 均从本节点手指表从头路由，不缓存中间结果。对于热点键（频繁访问相同 ID），每次查询均为全程路由开销。</p>
+
+<hr data-id="139" class="section-divider">
+
+<!-- ===== 第三章 ===== -->
+<h1 data-id="140" class="chapter-heading">第三章：优化一 —— 缩短拓扑收敛时间</h1>
+
+<h2 data-id="141">3.1 自适应维护周期</h2>
+<p data-id="142"><strong data-id="143">设计思路：</strong> 不再使用固定 60 秒周期，而是根据网络"活跃度"动态调整周期长度。活跃度由以下事件触发上升：节点加入通知（<code data-id="144">/notify</code>）、stabilize 发现拓扑变化、check_predecessor 检测到前驱崩溃。</p>
+<p data-id="145"><strong data-id="146">定义两种状态：</strong></p>
+<ul data-id="147">
+    <li data-id="148"><strong data-id="149">活跃态（ACTIVE_MAINTENANCE）：</strong> 近 30 秒内发生过拓扑变化事件。此时 stabilize 周期压缩为 <strong data-id="150">15 秒</strong>，fix_fingers 周期压缩为 <strong data-id="151">10 秒</strong>。</li>
+    <li data-id="152"><strong data-id="153">静默态（QUIET_MAINTENANCE）：</strong> 超过 120 秒无任何拓扑变化事件。stabilize 周期放宽为 <strong data-id="154">60 秒</strong>，fix_fingers 周期放宽为 <strong data-id="155">30 秒</strong>（仍优于 v1 的 60 秒）。</li>
+</ul>
+<p data-id="156"><strong data-id="157">状态切换规则：</strong></p>
+<pre data-id="158">on topology_change_event():
+    last_change_time = now()
+    if state == QUIET_MAINTENANCE:
+        transition(ACTIVE_MAINTENANCE)
+
+on maintenance_timer_tick():
+    if now() - last_change_time > 120s:
+        transition(QUIET_MAINTENANCE)</pre>
+
+<h2 data-id="159">3.2 批量并行 fix_fingers</h2>
+<p data-id="160"><strong data-id="161">v1.0 原始方式：</strong> 每个 fix_fingers 周期修复 1 条手指（next 索引递增）。</p>
+<p data-id="162"><strong data-id="163">v3.0 新方式：</strong> 每个 fix_fingers 周期并发修复 <strong data-id="164">k 条手指</strong>，k 的值依状态而定：</p>
+<ul data-id="165">
+    <li data-id="166">ACTIVE_MAINTENANCE 状态：k = 8（每 10 秒修复 8 条，完整 160 条约 200 秒 = 3.3 分钟）</li>
+    <li data-id="167">QUIET_MAINTENANCE 状态：k = 4（每 30 秒修复 4 条，完整 160 条约 1200 秒 = 20 分钟，相比 v1 的 160 分钟仍大幅改善）</li>
+</ul>
+<p data-id="168"><strong data-id="169">并发控制：</strong> k 条 find_successor 请求并发发出，设置独立超时（见第五章），失败的条目保留旧值不更新，下一批次重试。</p>
+<p data-id="170"><strong data-id="171">修复顺序优化（指数跨越）：</strong> v1.0 按线性顺序（finger[0], finger[1], finger[2], ...）修复，而靠前的手指（finger[0]~finger[10]）覆盖范围小，靠后的手指（finger[140]~finger[159]）对路由效率影响更大。v3.0 在每批次内按"指数跨越"顺序优先修复高序号手指：</p>
+<pre data-id="172">// 每批次选取优先级最高的 k 条
+priority_order = [159, 140, 120, 100, 80, 60, 40, 20, 10, 5, 2, 1, ...]
+// 然后按 priority_order 循环取下 k 条</pre>
+
+<h2 data-id="173">3.3 快速崩溃检测</h2>
+<p data-id="174"><strong data-id="175">v3.0 新增 Fast Failure Detection 机制：</strong></p>
+<p data-id="176"><code data-id="177">check_predecessor</code> 原本每 60 秒一次。v3.0 改为：</p>
+<ul data-id="178">
+    <li data-id="179">基础周期：30 秒（静默态）/ 10 秒（活跃态）</li>
+    <li data-id="180">发现 <code data-id="181">/ping</code> 超时后，<strong data-id="182">立即重试 1 次</strong>（间隔 2 秒），而不是等待下一个周期</li>
+    <li data-id="183">2 次均超时则判定前驱崩溃，立即将 predecessor 置为 nil，并触发 topology_change_event()</li>
+</ul>
+<p data-id="184">stabilize 检测后继崩溃时，同样引入快速切换：</p>
+<pre data-id="185">on stabilize():
+    resp = call_with_timeout(successor, GET /predecessor, timeout=tiered_timeout)
+    if resp == TIMEOUT or resp == ERROR:
+        // 立即切换到后继列表第二项，不等待下一周期
+        successor = successor_list[1]
+        emit topology_change_event()
+        // 异步尝试联系原后继，确认是否真崩溃
+        async verify_successor_liveness(old_successor)</pre>
+
+<hr data-id="186" class="section-divider">
+
+<!-- ===== 第四章 ===== -->
+<h1 data-id="187" class="chapter-heading">第四章：优化二 —— 增强容错能力</h1>
+
+<h2 data-id="188">4.1 动态后继列表长度</h2>
+<p data-id="189"><strong data-id="190">v1.0：</strong> 固定 r=3。</p>
+<p data-id="191"><strong data-id="192">v3.0：</strong> 引入动态后继列表长度：</p>
+<ul data-id="193">
+    <li data-id="194">默认值：r = 5（配置项 <code data-id="195">successor_list_size</code>，默认 5，最大 10）</li>
+    <li data-id="196">r=5 可容忍 4 个后继同时崩溃，在网络规模 N=50~500 的学习环境中，提供充分的冗余</li>
+</ul>
+<p data-id="197"><strong data-id="198">后继列表维护：</strong> stabilize 成功时，从后继节点获取其后继列表前 r-1 项，拼接本节点直接后继，构成本节点的 r 项完整后继列表：</p>
+<pre data-id="199">on stabilize_success(succ_node, succ_successor_list):
+    new_list = [succ_node] + succ_successor_list[:r-1]
+    local_successor_list = new_list[:r]</pre>
+
+<h2 data-id="200">4.2 前驱链备份（Predecessor Chain）</h2>
+<p data-id="201"><strong data-id="202">问题：</strong> v1.0 仅维护单一 predecessor 引用。前驱崩溃后，本节点 predecessor 为 nil，无法立即知晓"谁将成为新前驱"，需要等待新前驱的 stabilize 发来 <code data-id="203">/notify</code>。</p>
+<p data-id="204"><strong data-id="205">v3.0 新增 predecessor_list（长度 p=2）：</strong></p>
+<ul data-id="206">
+    <li data-id="207"><code data-id="208">predecessor_list[0]</code>：直接前驱（等同于 v1 的 predecessor）</li>
+    <li data-id="209"><code data-id="210">predecessor_list[1]</code>：前驱的前驱（间接前驱备份）</li>
+</ul>
+<p data-id="211"><strong data-id="212">更新时机：</strong> 每次收到 <code data-id="213">/notify</code> 时，将 sender 作为 <code data-id="214">predecessor_list[0]</code>，同时从 sender 获取其 predecessor 存入 <code data-id="215">predecessor_list[1]</code>。</p>
+<p data-id="216"><strong data-id="217">用途：</strong> 当 <code data-id="218">predecessor_list[0]</code> 崩溃时，<code data-id="219">predecessor_list[1]</code> 可作为候选前驱参考，辅助 stabilize 更快收敛。</p>
+
+<h2 data-id="220">4.3 多路径 ISOLATED 状态恢复</h2>
+<p data-id="221"><strong data-id="222">v1.0 ISOLATED 恢复：</strong> 仅通过联系 Tracker 获取种子节点，重新执行 join 流程。若 Tracker 也不可用，节点将永久孤立。</p>
+<p data-id="223"><strong data-id="224">v3.0 多路径恢复策略（按优先级依次尝试）：</strong></p>
+<ul data-id="225">
+    <li data-id="226"><strong data-id="227">路径 A（后继列表恢复）：</strong> 遍历本地 successor_list，依次 /ping，第一个响应的节点作为重新入网的引导节点，执行轻量级 re-stabilize（不重新 join，直接修正手指表）。</li>
+    <li data-id="228"><strong data-id="229">路径 B（前驱链恢复）：</strong> 遍历 predecessor_list，同上。</li>
+    <li data-id="230"><strong data-id="231">路径 C（手指表扫描恢复）：</strong> 随机采样手指表中 16 条记录，/ping 存活节点，以第一个响应节点为引导执行 re-join。</li>
+    <li data-id="232"><strong data-id="233">路径 D（Tracker 重新注册）：</strong> 联系 Tracker <code data-id="234">/nodes</code> 获取 bootstrap 节点，执行完整 join 流程。</li>
+    <li data-id="235"><strong data-id="236">路径 E（等待）：</strong> 以指数退避等待（30s→60s→120s→...），期间定期重试路径 A~D。</li>
+</ul>
+<pre data-id="237">on enter_ISOLATED():
+    backoff = 30s
+    for attempt in [A, B, C, D, E]:
+        result = try_recovery(attempt)
+        if result == SUCCESS:
+            transition(JOINING or ACTIVE)
+            return
+    wait(backoff)
+    backoff = min(backoff * 2, 300s)
+    retry()</pre>
+
+<h2 data-id="238">4.4 后继切换的数据责任转移</h2>
+<p data-id="239">当节点检测到直接后继崩溃并切换到 <code data-id="240">successor_list[1]</code> 时，该节点原本"应由崩溃后继负责的键区间"现在需要重新归属。v3.0 明确：</p>
+<ul data-id="241">
+    <li data-id="242">切换后继后，本节点在下一个 stabilize 周期中，将会从新后继处验证键区间归属（通过 <code data-id="243">/predecessor</code> 握手），确保环连续性。</li>
+    <li data-id="244">Tracker 端记录崩溃节点信息（自动超时移除，TTL=120 秒），避免其他节点继续将流量导向崩溃节点。</li>
+</ul>
+
+<hr data-id="245" class="section-divider">
+
+<!-- ===== 第五章 ===== -->
+<h1 data-id="246" class="chapter-heading">第五章：优化三 —— 降低跨地域延迟</h1>
+
+<h2 data-id="247">5.1 Region 标签</h2>
+<p data-id="248"><strong data-id="249">v3.0 在 NodeInfo 中新增 <code data-id="250">region</code> 字段：</strong></p>
+<pre data-id="251">{
+  "node_id": "...",
+  "host": "...",
+  "port": 8080,
+  "region": "us-east-1",
+  "rtt_samples": {}
+}</pre>
+<p data-id="252"><code data-id="253">region</code> 为字符串标签，由节点启动时从配置文件读取（配置项 <code data-id="254">node_region</code>），格式建议参照云厂商区域命名（如 <code data-id="255">us-east-1</code>、<code data-id="256">eu-west-1</code>、<code data-id="257">ap-northeast-1</code>），也可使用自定义标签（如 <code data-id="258">dc-beijing</code>）。</p>
+
+<h2 data-id="259">5.2 RTT 测量与缓存</h2>
+<p data-id="260"><strong data-id="261">新增 RTT 感知模块（LatencyProbe）：</strong></p>
+<p data-id="262">节点启动后，对手指表中的所有节点以及后继列表中的节点，周期性发送 /ping 并记录往返延迟：</p>
+<pre data-id="263">type RTTCache struct {
+    mu      sync.RWMutex
+    samples map[string]RTTEntry  // key: node_id
+}
+
+type RTTEntry struct {
+    AvgRTT    time.Duration
+    SampleCnt int
+    UpdatedAt time.Time
+}</pre>
+<ul data-id="264">
+    <li data-id="265">RTT 采样方式：每次 <code data-id="266">/ping</code>（check_predecessor、stabilize 中的活跃探测）记录 RTT，用 <strong data-id="267">指数加权移动平均（EWMA，α=0.3）</strong> 更新：</li>
+</ul>
+<p data-id="268" style="padding-left:36px;"><code data-id="269">new_avg = 0.3 * latest_rtt + 0.7 * old_avg</code></p>
+<ul data-id="270">
+    <li data-id="271">RTT 样本超过 300 秒未刷新则视为过期，查找时退回使用 region 估算值</li>
+</ul>
+
+<h2 data-id="272">5.3 延迟感知路由（Latency-Aware Routing）</h2>
+<p data-id="273"><strong data-id="274">v1.0 closest_preceding_node：</strong> 在手指表中找 ID 最接近目标的节点（纯 ID 距离）。</p>
+<p data-id="275"><strong data-id="276">v3.0 latency_aware_closest_preceding_node：</strong> 综合考虑 ID 接近度和 RTT：</p>
+<pre data-id="277">对于手指表中满足 finger[i].id ∈ (self.id, target_id) 的所有候选节点:
+
+    score(node) = w_id  * id_proximity_score(node)
+                + w_rtt * rtt_score(node)
+                + w_region * region_affinity_score(node)
+
+    id_proximity_score(node)    = 1 - (target_id - node.id) / 2^m
+    rtt_score(node)             = 1 / (1 + rtt_ms(node) / 100)
+    region_affinity_score(node) = 1.0 if same_region else 0.0
+
+权重（默认值，可配置）：
+    w_id     = 0.6
+    w_rtt    = 0.3
+    w_region = 0.1
+
+选择 score 最高的节点作为下一跳</pre>
+<p data-id="278">当 RTT 数据不可用时，退回 v1.0 的纯 ID 距离模式（即 w_rtt=0, w_region=0）。</p>
+
+<h2 data-id="279">5.4 分层超时策略</h2>
+<p data-id="280">v1.0 所有 HTTP 请求统一 5 秒超时。在跨地域部署场景（RTT 可达 200~300ms），5 秒已经较为充裕；但在 fix_fingers 场景（批量并发请求），5 秒可能导致大量无谓等待。</p>
+<p data-id="281"><strong data-id="282">v3.0 分层超时：</strong></p>
+<table data-id="283">
+    <tr data-id="284"><th data-id="285">操作类型</th><th data-id="286">同地域超时</th><th data-id="287">跨地域超时</th><th data-id="288">说明</th></tr>
+    <tr data-id="289"><td data-id="290">/ping（活跃探测）</td><td data-id="291">2s</td><td data-id="292">5s</td><td data-id="293">快速失败，用于崩溃检测</td></tr>
+    <tr data-id="294"><td data-id="295">/predecessor（stabilize）</td><td data-id="296">3s</td><td data-id="297">8s</td><td data-id="298">允许稍长，容忍短暂抖动</td></tr>
+    <tr data-id="299"><td data-id="300">/find_successor（路由）</td><td data-id="301">5s</td><td data-id="302">15s</td><td data-id="303">关键路径，适当宽容</td></tr>
+    <tr data-id="304"><td data-id="305">fix_fingers 中的 /find_successor</td><td data-id="306">5s</td><td data-id="307">30s</td><td data-id="308">非关键，可后台慢速执行</td></tr>
+    <tr data-id="309"><td data-id="310">/notify</td><td data-id="311">3s</td><td data-id="312">8s</td><td data-id="313">发送即忘，超时可重试</td></tr>
+</table>
+<p data-id="314">同地域判断：request 目标节点的 region == 本节点 region，则使用同地域超时；否则使用跨地域超时。</p>
+
+<h2 data-id="315">5.5 Piggyback 信息携带</h2>
+<p data-id="316"><strong data-id="317">设计思路：</strong> 节点间本已存在大量周期性通信（stabilize 调用 <code data-id="318">/predecessor</code>、fix_fingers 调用 <code data-id="319">/find_successor</code>）。利用这些请求的响应体，顺带携带有用的拓扑信息，减少额外探测请求。</p>
+<p data-id="320"><strong data-id="321">实现：</strong> 在所有 Node API 的响应体中新增可选字段 <code data-id="322">piggyback</code>：</p>
+<pre data-id="323">{
+  "data": { ... },
+  "piggyback": {
+    "sender_successor_list": ["node_id_1", "node_id_2"],
+    "sender_region": "us-east-1",
+    "sender_rtt_hints": {
+      "node_id_3": 45,
+      "node_id_4": 120
+    }
+  }
+}</pre>
+<p data-id="324">接收方在处理响应时，将 <code data-id="325">piggyback</code> 中的信息合并更新至本地 RTT 缓存和 region 缓存（不直接更新路由表，仅作参考）。</p>
+
+<hr data-id="326" class="section-divider">
+
+<!-- ===== 第六章 ===== -->
+<h1 data-id="327" class="chapter-heading">第六章：优化四 —— 提升路由效率</h1>
+
+<h2 data-id="328">6.1 路由结果 LRU 缓存</h2>
+<p data-id="329"><strong data-id="330">新增 RoutingCache 模块：</strong></p>
+<pre data-id="331">type RoutingCache struct {
+    mu      sync.RWMutex
+    lru     *lru.Cache         // 容量 1000 条
+    ttl     time.Duration      // 默认 30s
+}
+
+type CacheEntry struct {
+    TargetID   string
+    ResultNode NodeInfo
+    CachedAt   time.Time
+}</pre>
+<ul data-id="332">
+    <li data-id="333"><strong data-id="334">缓存键：</strong> 查找目标的 node_id（160-bit 十六进制字符串）。</li>
+    <li data-id="335"><strong data-id="336">缓存值：</strong> find_successor 返回的负责该 ID 的节点 NodeInfo。</li>
+    <li data-id="337"><strong data-id="338">失效策略：</strong></li>
+</ul>
+<ul data-id="339" style="padding-left:72px;">
+    <li data-id="340">TTL 过期（默认 30 秒）</li>
+    <li data-id="341">检测到拓扑变化事件（topology_change_event）时，<strong data-id="342">清空全部缓存</strong>（因拓扑变更可能导致大量路由结果失效）</li>
+    <li data-id="343">发现缓存命中节点不响应时，删除该条目并重新路由</li>
+</ul>
+<p data-id="344"><strong data-id="345">命中率优化（区间缓存）：</strong> 对于 find_successor(id) 的查询，不仅缓存精确 id 的结果，还将该结果节点对应的负责区间 <code data-id="346">(predecessor.id, node.id]</code> 内的所有未来查询直接命中缓存：</p>
+<pre data-id="347">on cache_store(target_id, result_node, result_node_predecessor):
+    interval = (result_node_predecessor.id, result_node.id]
+    cache.store_interval(interval, result_node)
+
+on find_successor(id):
+    if cached_node = cache.lookup_interval(id):
+        return cached_node  // O(log n) 区间查找
+    // else: 正常路由</pre>
+
+<h2 data-id="348">6.2 并行 find_successor（可选加速模式）</h2>
+<p data-id="349">对于对延迟极其敏感的查询，v3.0 引入<strong data-id="350">并行探测模式（Parallel Lookup）</strong>：</p>
+<ul data-id="351">
+    <li data-id="352">同时向手指表中最接近目标的 <strong data-id="353">前 3 个候选节点</strong> 发出 find_successor 请求</li>
+    <li data-id="354">取第一个返回的有效结果，取消其余请求</li>
+    <li data-id="355">该模式通过配置项 <code data-id="356">parallel_lookup_enabled</code>（默认 false）启用，因其会带来额外网络流量</li>
+</ul>
+<pre data-id="357">func (n *Node) findSuccessorParallel(id string) (NodeInfo, error) {
+    candidates := n.topKClosestPreceding(id, 3)
+    resultCh := make(chan NodeInfo, 3)
+    ctx, cancel := context.WithTimeout(context.Background(), tiered_timeout)
+    defer cancel()
+    for _, c := range candidates {
+        go func(node NodeInfo) {
+            res, err := callFindSuccessor(ctx, node, id)
+            if err == nil { resultCh &lt;- res }
+        }(c)
+    }
+    select {
+    case res := &lt;-resultCh:
+        cancel()
+        return res, nil
+    case &lt;-ctx.Done():
+        return NodeInfo{}, ErrTimeout
+    }
+}</pre>
+
+<h2 data-id="358">6.3 手指表预热（Finger Table Warm-up）</h2>
+<p data-id="359">节点完成 join 后，v1.0 手指表是惰性填充的（fix_fingers 逐步更新）。v3.0 在 join 完成后立即执行一次 <strong data-id="360">手指表预热</strong>：</p>
+<ul data-id="361">
+    <li data-id="362">并发发出 min(m, 32) 条 find_successor 请求，覆盖手指表中最重要的 32 个条目（优先高序号，见 3.2 节的指数跨越顺序）</li>
+    <li data-id="363">预热完成前，节点处于 <code data-id="364">WARMING_UP</code> 子状态，对外 <code data-id="365">/find_successor</code> 请求仍正常响应（使用当前已知条目），但不参与手指表修复通知</li>
+</ul>
+
+<h2 data-id="366">6.4 手指表条目有效性标记</h2>
+<p data-id="367">v3.0 在手指表条目中增加 <code data-id="368">valid</code> 与 <code data-id="369">last_verified</code> 字段：</p>
+<pre data-id="370">type FingerEntry struct {
+    Start        string    // finger[i].start = (self.id + 2^i) mod 2^m
+    Node         NodeInfo  // 负责该区间的节点
+    Valid         bool      // false 表示已知过期，优先重修
+    LastVerified  time.Time
+}</pre>
+<p data-id="371">当检测到某个手指节点不可达时，立即将 <code data-id="372">valid = false</code>，fix_fingers 调度器优先修复 valid=false 的条目，而非按序轮转。</p>
+
+<hr data-id="373" class="section-divider">
+
+<!-- ===== 第七章 ===== -->
+<h1 data-id="374" class="chapter-heading">第七章：数据结构变更</h1>
+
+<h2 data-id="375">7.1 NodeInfo Schema 变更（在 v2.0 基础上扩展）</h2>
+<p data-id="376"><strong data-id="377">v2.0 NodeInfo：</strong></p>
+<pre data-id="378">{
+  "node_id": "&lt;hex160&gt;",
+  "host": "&lt;string&gt;",
+  "port": &lt;int&gt;,
+  "public_key": "&lt;base64 Ed25519 pubkey&gt;",
+  "certificate": { ... }
+}</pre>
+<p data-id="379"><strong data-id="380">v3.0 新增字段：</strong></p>
+<pre data-id="381">{
+  "node_id": "&lt;hex160&gt;",
+  "host": "&lt;string&gt;",
+  "port": &lt;int&gt;,
+  "public_key": "&lt;base64 Ed25519 pubkey&gt;",
+  "certificate": { ... },
+  "region": "&lt;string&gt;",
+  "version": "3.0",
+  "capabilities": ["latency_aware_routing", "piggyback", "parallel_lookup"]
+}</pre>
+<table data-id="382">
+    <tr data-id="383"><th data-id="384">新字段</th><th data-id="385">类型</th><th data-id="386">说明</th></tr>
+    <tr data-id="387"><td data-id="388">region</td><td data-id="389">string</td><td data-id="390">节点所在地域标签，由配置文件指定</td></tr>
+    <tr data-id="391"><td data-id="392">version</td><td data-id="393">string</td><td data-id="394">协议版本，便于兼容性判断</td></tr>
+    <tr data-id="395"><td data-id="396">capabilities</td><td data-id="397">[]string</td><td data-id="398">节点支持的可选扩展特性列表</td></tr>
+</table>
+
+<h2 data-id="399">7.2 SuccessorList 变更</h2>
+<ul data-id="400">
+    <li data-id="401">v1.0/v2.0：长度固定为 r=3</li>
+    <li data-id="402">v3.0：长度为 r（默认 5），通过配置项 <code data-id="403">successor_list_size</code> 指定</li>
+</ul>
+
+<h2 data-id="404">7.3 新增本地状态结构</h2>
+<pre data-id="405">type NodeState struct {
+    // v1/v2 已有
+    ID              string
+    SuccessorList   []NodeInfo    // 长度 r，默认 5
+    Predecessor     NodeInfo
+    FingerTable     [160]FingerEntry
+
+    // v3.0 新增
+    PredecessorList []NodeInfo       // 长度 p=2
+    RTTCache        *RTTCache
+    RoutingCache    *RoutingCache
+    MaintenanceMode MaintenanceMode  // ACTIVE_MAINTENANCE / QUIET_MAINTENANCE
+    LastChangeTime  time.Time
+    Region          string
+}</pre>
+
+<hr data-id="406" class="section-divider">
+
+<!-- ===== 第八章 ===== -->
+<h1 data-id="407" class="chapter-heading">第八章：API 变更规范</h1>
+
+<h2 data-id="408">8.1 通用约定（继承 v1/v2）</h2>
+<ul data-id="409">
+    <li data-id="410">所有请求须携带 v2.0 规定的 Ed25519 签名头（<code data-id="411">X-Node-ID</code>、<code data-id="412">X-Signature</code>、<code data-id="413">X-Timestamp</code>、<code data-id="414">X-Nonce</code>）</li>
+    <li data-id="415">响应体结构继承 v1.0 的统一格式：<code data-id="416">{"data": ..., "error": ...}</code></li>
+    <li data-id="417">v3.0 在响应体中新增可选顶层字段 <code data-id="418">piggyback</code>（见 5.5 节）</li>
+</ul>
+
+<h2 data-id="419">8.2 Node API 变更</h2>
+
+<h3 data-id="420">API-N1（新增）&nbsp; GET /rtt</h3>
+<div data-id="421" class="callout callout-note">
+    <p data-id="422" class="callout-label">功能说明</p>
+    <p data-id="423" style="margin:0;">返回本节点已知的各节点 RTT 样本，供其他节点参考。</p>
+</div>
+<p data-id="424"><strong data-id="425">请求：</strong> 无 Body</p>
+<p data-id="426"><strong data-id="427">响应：</strong></p>
+<pre data-id="428">{
+  "data": {
+    "rtt_samples": {
+      "&lt;node_id_1&gt;": 45,
+      "&lt;node_id_2&gt;": 180
+    },
+    "region": "us-east-1"
+  }
+}</pre>
+<p data-id="429"><strong data-id="430">用途：</strong> 其他节点可调用此接口获取本节点视角下的延迟信息，合并至自身 RTTCache。</p>
+
+<h3 data-id="431">API-N2（变更）&nbsp; GET /successor_list</h3>
+<p data-id="432"><strong data-id="433">v1.0 响应：</strong> 返回 r=3 个后继节点列表。</p>
+<p data-id="434"><strong data-id="435">v3.0 响应：</strong> 返回动态长度 r（默认 5）的后继节点列表，每项包含完整 NodeInfo（含 region 字段）。</p>
+<pre data-id="436">{
+  "data": {
+    "successor_list": [
+      { "node_id": "...", "host": "...", "port": 8080, "region": "us-east-1", ... },
+      ...
+    ]
+  },
+  "piggyback": { ... }
+}</pre>
+
+<h3 data-id="437">API-N3（变更）&nbsp; GET /predecessor</h3>
+<p data-id="438"><strong data-id="439">v3.0 响应新增 predecessor_list：</strong></p>
+<pre data-id="440">{
+  "data": {
+    "predecessor": { ... },
+    "predecessor_list": [
+      { "node_id": "...", ... },
+      { "node_id": "...", ... }
+    ]
+  },
+  "piggyback": { ... }
+}</pre>
+
+<h3 data-id="441">API-N4（变更）&nbsp; POST /find_successor</h3>
+<p data-id="442"><strong data-id="443">v3.0 请求 Body 新增可选字段：</strong></p>
+<pre data-id="444">{
+  "id": "&lt;hex160&gt;",
+  "requester_region": "ap-northeast-1",
+  "prefer_region": "ap-northeast-1"
+}</pre>
+<p data-id="445"><code data-id="446">prefer_region</code>：提示被请求节点在选择下一跳时优先考虑该地域的节点。</p>
+<p data-id="447"><strong data-id="448">v3.0 响应新增字段：</strong></p>
+<pre data-id="449">{
+  "data": {
+    "successor": { ... },
+    "hops": 3,
+    "cached": false
+  },
+  "piggyback": { ... }
+}</pre>
+<p data-id="450"><code data-id="451">hops</code>：本次路由经过的跳数（诊断用）。<code data-id="452">cached</code>：是否命中路由缓存。</p>
+
+<h3 data-id="453">API-N5（新增）&nbsp; GET /status</h3>
+<div data-id="454" class="callout callout-note">
+    <p data-id="455" class="callout-label">功能说明</p>
+    <p data-id="456" style="margin:0;">返回节点当前维护状态、路由缓存命中率等运维指标。</p>
+</div>
+<pre data-id="457">{
+  "data": {
+    "maintenance_mode": "ACTIVE_MAINTENANCE",
+    "last_change_time": "2026-05-29T10:00:00Z",
+    "routing_cache_size": 342,
+    "routing_cache_hit_rate": 0.73,
+    "finger_table_valid_count": 155,
+    "successor_list_size": 5,
+    "region": "us-east-1"
+  }
+}</pre>
+
+<h2 data-id="458">8.3 Tracker API 变更</h2>
+
+<h3 data-id="459">API-T1（变更）&nbsp; GET /nodes</h3>
+<p data-id="460"><strong data-id="461">v3.0 响应支持按 region 过滤：</strong></p>
+<p data-id="462">请求：<code data-id="463">GET /nodes?region=us-east-1&amp;limit=5</code></p>
+<p data-id="464">响应新增 region 字段，并支持按 region 查询，便于新节点优先获取同地域引导节点。</p>
+
+<h3 data-id="465">API-T2（新增）&nbsp; GET /regions</h3>
+<p data-id="466"><strong data-id="467">功能：</strong> 返回当前网络中已知的所有 region 及各 region 节点数量。</p>
+<pre data-id="468">{
+  "data": {
+    "regions": {
+      "us-east-1": 12,
+      "eu-west-1": 8,
+      "ap-northeast-1": 5
+    }
+  }
+}</pre>
+
+<hr data-id="469" class="section-divider">
+
+<!-- ===== 第九章 ===== -->
+<h1 data-id="470" class="chapter-heading">第九章：周期维护任务变更</h1>
+
+<h2 data-id="471">9.1 任务调度总览（v3.0）</h2>
+<table data-id="472">
+    <tr data-id="473"><th data-id="474">任务</th><th data-id="475">ACTIVE_MAINTENANCE 周期</th><th data-id="476">QUIET_MAINTENANCE 周期</th><th data-id="477">变化说明</th></tr>
+    <tr data-id="478"><td data-id="479">stabilize</td><td data-id="480">15s</td><td data-id="481">60s</td><td data-id="482">活跃期缩短至 15s</td></tr>
+    <tr data-id="483"><td data-id="484">fix_fingers</td><td data-id="485">10s，每批 k=8 条</td><td data-id="486">30s，每批 k=4 条</td><td data-id="487">批量并行修复</td></tr>
+    <tr data-id="488"><td data-id="489">check_predecessor</td><td data-id="490">10s</td><td data-id="491">30s</td><td data-id="492">加快崩溃检测</td></tr>
+    <tr data-id="493"><td data-id="494">latency_probe（新增）</td><td data-id="495">30s</td><td data-id="496">120s</td><td data-id="497">RTT 样本采集</td></tr>
+    <tr data-id="498"><td data-id="499">cache_cleanup（新增）</td><td data-id="500">每 30s 扫描 TTL</td><td data-id="501">每 30s 扫描 TTL</td><td data-id="502">路由缓存过期清理</td></tr>
+</table>
+
+<h2 data-id="503">9.2 维护状态机</h2>
+<pre data-id="504">                  ┌─────────────────────┐
+                  │   QUIET_MAINTENANCE  │
+                  │  stabilize=60s       │
+                  │  fix_fingers=30s,k=4 │
+                  └─────────┬───────────┘
+                            │ topology_change_event()
+                            ▼
+                  ┌─────────────────────┐
+                  │  ACTIVE_MAINTENANCE  │
+                  │  stabilize=15s       │
+                  │  fix_fingers=10s,k=8 │
+                  └─────────┬───────────┘
+                            │ 120s 无变化事件
+                            └──────────────────────►  QUIET_MAINTENANCE</pre>
+
+<hr data-id="505" class="section-divider">
+
+<!-- ===== 第十章 ===== -->
+<h1 data-id="506" class="chapter-heading">第十章：边缘情况与处理策略</h1>
+
+<h2 data-id="507">10.1 RTT 数据缺失时的路由降级</h2>
+<p data-id="508"><strong data-id="509">场景：</strong> 节点刚启动，RTTCache 为空，无法计算延迟感知得分。</p>
+<p data-id="510"><strong data-id="511">处理：</strong> 自动降级为 v1.0 的纯 ID 距离模式（w_rtt=0, w_region=0），手指表预热完成后逐步积累 RTT 样本，切换为延迟感知模式。</p>
+
+<h2 data-id="512">10.2 路由缓存导致的短暂路由错误</h2>
+<p data-id="513"><strong data-id="514">场景：</strong> 缓存命中某节点，但该节点已在缓存 TTL 内离开网络，导致路由到错误节点。</p>
+<p data-id="515"><strong data-id="516">处理：</strong> 目标节点若发现自身 ID 不覆盖请求的 key，应返回 <code data-id="517">302 Redirect</code> 并附带正确后继节点信息。请求方删除该缓存条目，使用重定向节点重试。</p>
+
+<h2 data-id="518">10.3 并行 fix_fingers 中的并发写冲突</h2>
+<p data-id="519"><strong data-id="520">场景：</strong> 同一 finger[i] 被两个并发修复协程同时写入不同结果。</p>
+<p data-id="521"><strong data-id="522">处理：</strong> 每个 finger 条目加细粒度读写锁（<code data-id="523">sync.RWMutex</code> per entry），后写入者覆盖先写入者（Last Write Wins），因 fix_fingers 结果均为当时网络最优解，短暂不一致可接受。</p>
+
+<h2 data-id="524">10.4 Region 标签伪造</h2>
+<p data-id="525"><strong data-id="526">场景：</strong> 恶意节点（已持有合法证书）伪造 region 字段，诱导其他节点优先向其转发流量。</p>
+<p data-id="527"><strong data-id="528">处理：</strong> region 字段仅为路由优化提示，不影响正确性（最终路由结果由 ID 环规则保证）。延迟感知权重 w_region=0.1 较低，影响有限。更深层的 region 验证超出本学习系统范围。</p>
+
+<h2 data-id="529">10.5 批量节点同时加入导致的收敛震荡</h2>
+<p data-id="530"><strong data-id="531">场景：</strong> 大量节点同时加入，每个节点的 topology_change_event 持续触发，所有节点长期处于 ACTIVE_MAINTENANCE，频繁 stabilize 互相覆盖。</p>
+<p data-id="532"><strong data-id="533">处理：</strong> 引入 <strong data-id="534">稳定化抑制窗口（Stabilize Debounce）</strong>：在 15 秒周期内，若 stabilize 已执行 3 次以上仍检测到拓扑变化，自动将 ACTIVE_MAINTENANCE 周期延长至 30 秒，避免风暴。</p>
+
+<h2 data-id="535">10.6 路由缓存区间计算的环绕（Wrap-around）问题</h2>
+<p data-id="536"><strong data-id="537">场景：</strong> 负责节点区间跨越 ID 空间原点（0），如 predecessor.id = 0xFFF...F, node.id = 0x000...F，区间为 <code data-id="538">(0xFFF...F, 0x000...F]</code>（环绕区间）。</p>
+<p data-id="539"><strong data-id="540">处理：</strong> 区间查找时统一使用模运算 <code data-id="541">in_range(id, a, b)</code> 函数（与 v1.0 一致），区间缓存的存储与查找均通过此函数处理，无需特殊分支。</p>
+
+<hr data-id="542" class="section-divider">
+
+<!-- ===== 第十一章 ===== -->
+<h1 data-id="543" class="chapter-heading">第十一章：新增配置参数参考</h1>
+
+<table data-id="544">
+    <tr data-id="545"><th data-id="546">参数名</th><th data-id="547">类型</th><th data-id="548">默认值</th><th data-id="549">说明</th></tr>
+    <tr data-id="550"><td data-id="551">successor_list_size</td><td data-id="552">int</td><td data-id="553">5</td><td data-id="554">后继列表长度 r，建议范围 3~10</td></tr>
+    <tr data-id="555"><td data-id="556">predecessor_list_size</td><td data-id="557">int</td><td data-id="558">2</td><td data-id="559">前驱链备份长度 p</td></tr>
+    <tr data-id="560"><td data-id="561">node_region</td><td data-id="562">string</td><td data-id="563">"default"</td><td data-id="564">节点所在地域标签</td></tr>
+    <tr data-id="565"><td data-id="566">maintenance_active_stabilize_interval</td><td data-id="567">duration</td><td data-id="568">15s</td><td data-id="569">ACTIVE 状态 stabilize 周期</td></tr>
+    <tr data-id="570"><td data-id="571">maintenance_quiet_stabilize_interval</td><td data-id="572">duration</td><td data-id="573">60s</td><td data-id="574">QUIET 状态 stabilize 周期</td></tr>
+    <tr data-id="575"><td data-id="576">maintenance_active_fix_fingers_interval</td><td data-id="577">duration</td><td data-id="578">10s</td><td data-id="579">ACTIVE 状态 fix_fingers 周期</td></tr>
+    <tr data-id="580"><td data-id="581">maintenance_quiet_fix_fingers_interval</td><td data-id="582">duration</td><td data-id="583">30s</td><td data-id="584">QUIET 状态 fix_fingers 周期</td></tr>
+    <tr data-id="585"><td data-id="586">fix_fingers_batch_size_active</td><td data-id="587">int</td><td data-id="588">8</td><td data-id="589">ACTIVE 状态每批修复手指数 k</td></tr>
+    <tr data-id="590"><td data-id="591">fix_fingers_batch_size_quiet</td><td data-id="592">int</td><td data-id="593">4</td><td data-id="594">QUIET 状态每批修复手指数 k</td></tr>
+    <tr data-id="595"><td data-id="596">topology_change_window</td><td data-id="597">duration</td><td data-id="598">120s</td><td data-id="599">超过此时间无变化则切换 QUIET</td></tr>
+    <tr data-id="600"><td data-id="601">routing_cache_enabled</td><td data-id="602">bool</td><td data-id="603">true</td><td data-id="604">是否启用路由结果缓存</td></tr>
+    <tr data-id="605"><td data-id="606">routing_cache_size</td><td data-id="607">int</td><td data-id="608">1000</td><td data-id="609">路由缓存最大条目数</td></tr>
+    <tr data-id="610"><td data-id="611">routing_cache_ttl</td><td data-id="612">duration</td><td data-id="613">30s</td><td data-id="614">路由缓存 TTL</td></tr>
+    <tr data-id="615"><td data-id="616">latency_weight_id</td><td data-id="617">float</td><td data-id="618">0.6</td><td data-id="619">延迟感知路由中 ID 接近度权重</td></tr>
+    <tr data-id="620"><td data-id="621">latency_weight_rtt</td><td data-id="622">float</td><td data-id="623">0.3</td><td data-id="624">延迟感知路由中 RTT 权重</td></tr>
+    <tr data-id="625"><td data-id="626">latency_weight_region</td><td data-id="627">float</td><td data-id="628">0.1</td><td data-id="629">延迟感知路由中同地域亲和权重</td></tr>
+    <tr data-id="630"><td data-id="631">parallel_lookup_enabled</td><td data-id="632">bool</td><td data-id="633">false</td><td data-id="634">是否启用并行探测路由模式</td></tr>
+    <tr data-id="635"><td data-id="636">parallel_lookup_candidates</td><td data-id="637">int</td><td data-id="638">3</td><td data-id="639">并行探测候选节点数</td></tr>
+    <tr data-id="640"><td data-id="641">timeout_ping_same_region</td><td data-id="642">duration</td><td data-id="643">2s</td><td data-id="644">同地域 /ping 超时</td></tr>
+    <tr data-id="645"><td data-id="646">timeout_ping_cross_region</td><td data-id="647">duration</td><td data-id="648">5s</td><td data-id="649">跨地域 /ping 超时</td></tr>
+    <tr data-id="650"><td data-id="651">timeout_find_successor_same</td><td data-id="652">duration</td><td data-id="653">5s</td><td data-id="654">同地域 /find_successor 超时</td></tr>
+    <tr data-id="655"><td data-id="656">timeout_find_successor_cross</td><td data-id="657">duration</td><td data-id="658">15s</td><td data-id="659">跨地域 /find_successor 超时</td></tr>
+    <tr data-id="660"><td data-id="661">timeout_fix_fingers_same</td><td data-id="662">duration</td><td data-id="663">5s</td><td data-id="664">同地域 fix_fingers 请求超时</td></tr>
+    <tr data-id="665"><td data-id="666">timeout_fix_fingers_cross</td><td data-id="667">duration</td><td data-id="668">30s</td><td data-id="669">跨地域 fix_fingers 请求超时</td></tr>
+    <tr data-id="670"><td data-id="671">latency_probe_interval_active</td><td data-id="672">duration</td><td data-id="673">30s</td><td data-id="674">ACTIVE 状态 RTT 探测周期</td></tr>
+    <tr data-id="675"><td data-id="676">latency_probe_interval_quiet</td><td data-id="677">duration</td><td data-id="678">120s</td><td data-id="679">QUIET 状态 RTT 探测周期</td></tr>
+    <tr data-id="680"><td data-id="681">rtt_ewma_alpha</td><td data-id="682">float</td><td data-id="683">0.3</td><td data-id="684">RTT EWMA 平滑系数</td></tr>
+    <tr data-id="685"><td data-id="686">rtt_sample_expiry</td><td data-id="687">duration</td><td data-id="688">300s</td><td data-id="689">RTT 样本过期时间</td></tr>
+    <tr data-id="690"><td data-id="691">piggyback_enabled</td><td data-id="692">bool</td><td data-id="693">true</td><td data-id="694">是否在响应中携带 piggyback 信息</td></tr>
+    <tr data-id="695"><td data-id="696">stabilize_debounce_threshold</td><td data-id="697">int</td><td data-id="698">3</td><td data-id="699">连续 stabilize 检测到变化的次数阈值，触发抑制</td></tr>
+</table>
+
+<hr data-id="700" class="section-divider">
+
+<!-- ===== 第十二章 ===== -->
+<h1 data-id="701" class="chapter-heading">第十二章：实现建议（Go 语言）</h1>
+
+<h2 data-id="702">12.1 自适应调度器</h2>
+<p data-id="703">建议使用 <code data-id="704">time.Timer</code>（而非 <code data-id="705">time.Ticker</code>）实现自适应周期，在每次执行结束后根据当前 MaintenanceMode 动态计算下次触发时间：</p>
+<pre data-id="706">func (n *Node) runStabilizeLoop() {
+    for {
+        n.stabilize()
+        interval := n.getStabilizeInterval()  // 根据 MaintenanceMode 返回 15s 或 60s
+        timer := time.NewTimer(interval)
+        select {
+        case &lt;-timer.C:
+            continue
+        case &lt;-n.stopCh:
+            return
+        }
+    }
+}</pre>
+
+<h2 data-id="707">12.2 并行 fix_fingers 实现</h2>
+<pre data-id="708">func (n *Node) fixFingersBatch() {
+    k := n.getBatchSize()  // 8 或 4
+    indices := n.nextKFingerIndices(k)  // 按指数跨越顺序选 k 条
+    var wg sync.WaitGroup
+    for _, i := range indices {
+        wg.Add(1)
+        go func(idx int) {
+            defer wg.Done()
+            start := n.fingerStart(idx)
+            ctx, cancel := context.WithTimeout(
+                context.Background(), n.fixFingersTimeout(idx))
+            defer cancel()
+            succ, err := n.findSuccessor(ctx, start)
+            if err == nil {
+                n.fingerTable[idx].Node         = succ
+                n.fingerTable[idx].Valid        = true
+                n.fingerTable[idx].LastVerified = time.Now()
+            } else {
+                n.fingerTable[idx].Valid = false
+            }
+        }(i)
+    }
+    wg.Wait()
+}</pre>
+
+<h2 data-id="709">12.3 LRU 路由缓存</h2>
+<p data-id="710">推荐使用 <code data-id="711">github.com/hashicorp/golang-lru/v2</code>（或自实现）：</p>
+<pre data-id="712">import lru "github.com/hashicorp/golang-lru/v2"
+
+type RoutingCache struct {
+    mu    sync.RWMutex
+    cache *lru.Cache[string, CacheEntry]
+    ttl   time.Duration
+}
+
+func (rc *RoutingCache) Get(id string) (NodeInfo, bool) {
+    rc.mu.RLock()
+    defer rc.mu.RUnlock()
+    entry, ok := rc.cache.Get(id)
+    if !ok || time.Since(entry.CachedAt) > rc.ttl {
+        return NodeInfo{}, false
+    }
+    return entry.Node, true
+}
+
+func (rc *RoutingCache) InvalidateAll() {
+    rc.mu.Lock()
+    defer rc.mu.Unlock()
+    rc.cache.Purge()
+}</pre>
+
+<h2 data-id="713">12.4 与 v2.0 签名体系的兼容</h2>
+<p data-id="714">v3.0 所有新增 API（<code data-id="715">/rtt</code>、<code data-id="716">/status</code>）以及变更 API 均复用 v2.0 的签名验证中间件，无需任何修改。</p>
+<div data-id="717" class="callout callout-important">
+    <p data-id="718" class="callout-label">⚠ 注意：Piggyback 数据信任级别</p>
+    <p data-id="719" style="margin:0;"><code data-id="720">piggyback</code> 字段内容不参与签名（为响应体附加信息），接收方对 piggyback 数据应以"参考而非信任"的态度处理，<strong data-id="721">不能</strong>仅凭 piggyback 内容更新路由表核心数据。</p>
+</div>
+
+<hr data-id="722" class="section-divider">
+
+<!-- ===== 文档结尾 ===== -->
+<p data-id="723" style="text-align:center; color:#888888; font-size:9pt; margin-top:24pt;">
+    文档结束 &nbsp;|&nbsp; Chord DHT 网络优化扩展设计文档 v3.0 &nbsp;|&nbsp; 2026 年 5 月 29 日 &nbsp;|&nbsp; 草案
+</p>
+
+</body>
+</html>
