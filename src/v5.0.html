@@ -1,0 +1,1623 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>Chord DHT Zave 修正版协议集成设计文档 v5.0</title>
+    <style>
+        :root { color-scheme: light only; }
+
+        body {
+            font-family: Calibri, sans-serif;
+            font-size: 11pt;
+            line-height: 1.5;
+            color: #000000;
+            background: #ffffff;
+            max-width: 816px;
+            margin: 0 auto;
+            padding: 72px;
+        }
+
+        h1 { font-family: Calibri, sans-serif; font-size: 22pt; font-weight: bold; margin-top: 24pt; margin-bottom: 6pt; line-height: 1.3; color: #1a1a1a; }
+        h2 { font-family: Calibri, sans-serif; font-size: 16pt; font-weight: bold; margin-top: 18pt; margin-bottom: 6pt; line-height: 1.3; color: #1a1a1a; }
+        h3 { font-family: Calibri, sans-serif; font-size: 13pt; font-weight: bold; margin-top: 12pt; margin-bottom: 6pt; line-height: 1.3; color: #1a1a1a; }
+
+        p { margin-top: 0; margin-bottom: 6pt; }
+
+        a { color: #2b5797; text-decoration: underline; }
+
+        table { border-collapse: collapse; width: 100%; margin-top: 12pt; margin-bottom: 12pt; }
+        th, td { border: 1px solid #000000; padding: 6px 8px; text-align: left; vertical-align: top; font-size: 10.5pt; }
+        th { font-weight: bold; background-color: #e8eef7; }
+
+        ul, ol { margin-top: 6pt; margin-bottom: 6pt; padding-left: 36px; }
+        li { margin-bottom: 3pt; }
+
+        pre {
+            font-family: Consolas, monospace;
+            font-size: 9.5pt;
+            background-color: #f5f5f5;
+            border: 1px solid #cccccc;
+            border-left: 3px solid #2b5797;
+            padding: 10px 14px;
+            margin: 10pt 0;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            line-height: 1.45;
+        }
+
+        code {
+            font-family: Consolas, monospace;
+            font-size: 9.5pt;
+            background-color: #f0f0f0;
+            padding: 1px 4px;
+        }
+
+        blockquote {
+            border-left: 3px solid #2b5797;
+            margin: 12pt 0;
+            padding: 6pt 12pt;
+            color: #333333;
+            font-style: italic;
+            background-color: #f0f4fb;
+        }
+
+        .callout {
+            border: 1px solid #cccccc;
+            border-left: 3px solid #cccccc;
+            background-color: #f9f9f9;
+            padding: 12px;
+            margin: 12pt 0;
+        }
+        .callout-label { font-weight: bold; margin-bottom: 3pt; }
+        .callout-note { border-left-color: #2b5797; background-color: #e8eef7; }
+        .callout-warning { border-left-color: #cc0000; background-color: #fce8e8; }
+        .callout-important { border-left-color: #cc7a00; background-color: #fff4e0; }
+
+        .cover-table th { background-color: #2b5797; color: #ffffff; font-size: 11pt; }
+        .cover-table td { font-size: 11pt; }
+
+        .toc-item { margin-bottom: 4pt; }
+        .toc-item a { color: #1a1a1a; text-decoration: none; }
+        .toc-sub { padding-left: 24px; margin-bottom: 2pt; }
+        .toc-sub a { color: #333333; }
+
+        .chapter-divider {
+            border: none;
+            border-top: 2px solid #2b5797;
+            margin-top: 28pt;
+            margin-bottom: 8pt;
+        }
+
+        .doc-title-block {
+            text-align: center;
+            padding: 24pt 0 18pt 0;
+            border-bottom: 3px solid #2b5797;
+            margin-bottom: 24pt;
+        }
+        .doc-title-main {
+            font-size: 26pt;
+            font-weight: bold;
+            color: #1a1a1a;
+            margin-bottom: 4pt;
+            line-height: 1.25;
+        }
+        .doc-title-sub {
+            font-size: 14pt;
+            color: #2b5797;
+            margin-bottom: 2pt;
+        }
+        .doc-title-version {
+            font-size: 11pt;
+            color: #666666;
+            margin-top: 6pt;
+        }
+
+        .section-label {
+            font-size: 9pt;
+            color: #2b5797;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 0.5pt;
+            margin-bottom: 0;
+        }
+
+        .page-break { page-break-before: always; }
+
+        @media print { body { padding: 0; max-width: none; } }
+    </style>
+</head>
+<body data-id="0">
+
+<!-- ============================================================ -->
+<!--  封面                                                         -->
+<!-- ============================================================ -->
+
+<div data-id="1" class="doc-title-block">
+    <div data-id="2" class="doc-title-main">Chord DHT Zave 修正版协议<br data-id="3">集成设计文档</div>
+    <div data-id="4" class="doc-title-sub">How to Make Chord Correct — 协议缺陷全面修正集成</div>
+    <div data-id="5" class="doc-title-version">版本 v5.0 &nbsp;|&nbsp; 2026 年 6 月 4 日</div>
+</div>
+
+<table data-id="6" class="cover-table">
+    <colgroup data-id="7">
+        <col data-id="8" style="width: 32%;">
+        <col data-id="9" style="width: 68%;">
+    </colgroup>
+    <thead data-id="10">
+        <tr data-id="11">
+            <th data-id="12">字段</th>
+            <th data-id="13">内容</th>
+        </tr>
+    </thead>
+    <tbody data-id="14">
+        <tr data-id="15">
+            <td data-id="16"><strong data-id="17">文档版本</strong></td>
+            <td data-id="18">v5.0</td>
+        </tr>
+        <tr data-id="19">
+            <td data-id="20"><strong data-id="21">创建日期</strong></td>
+            <td data-id="22">2026 年 6 月 4 日</td>
+        </tr>
+        <tr data-id="23">
+            <td data-id="24"><strong data-id="25">基于版本</strong></td>
+            <td data-id="26">v4.0（Chord DHT 虚拟节点扩展设计文档）</td>
+        </tr>
+        <tr data-id="27">
+            <td data-id="28"><strong data-id="29">文档状态</strong></td>
+            <td data-id="30">草案</td>
+        </tr>
+        <tr data-id="31">
+            <td data-id="32"><strong data-id="33">适用对象</strong></td>
+            <td data-id="34">在 v4.0 基础上集成 Zave 协议修正的工程师</td>
+        </tr>
+        <tr data-id="35">
+            <td data-id="36"><strong data-id="37">适用范围</strong></td>
+            <td data-id="38">学习用途，不适合直接用于生产环境</td>
+        </tr>
+        <tr data-id="39">
+            <td data-id="40"><strong data-id="41">新增机制</strong></td>
+            <td data-id="42">Rectify 替代 Notify、Stabilize 候选存活验证、Join 后继列表完整初始化、OrderedSuccessorLists 不变式、稳定基（Stable Base）要求</td>
+        </tr>
+    </tbody>
+</table>
+
+<!-- ============================================================ -->
+<!--  目录                                                         -->
+<!-- ============================================================ -->
+
+<h1 data-id="43">目录</h1>
+
+<div data-id="44" class="toc-item"><a data-id="45" href="#ch1"><strong data-id="46">第一章：背景与设计目标</strong></a></div>
+<div data-id="47" class="toc-sub"><a data-id="48" href="#s1-1">1.1 背景</a></div>
+<div data-id="49" class="toc-sub"><a data-id="50" href="#s1-2">1.2 设计目标</a></div>
+<div data-id="51" class="toc-sub"><a data-id="52" href="#s1-3">1.3 不在设计范围内</a></div>
+
+<div data-id="53" class="toc-item"><a data-id="54" href="#ch2"><strong data-id="55">第二章：Zave 2017 核心发现摘要</strong></a></div>
+<div data-id="56" class="toc-sub"><a data-id="57" href="#s2-1">2.1 论文背景</a></div>
+<div data-id="58" class="toc-sub"><a data-id="59" href="#s2-2">2.2 七个"不变式"均不成立</a></div>
+<div data-id="60" class="toc-sub"><a data-id="61" href="#s2-3">2.3 五大核心缺陷（对照 v1.0 实现）</a></div>
+<div data-id="62" class="toc-sub"><a data-id="63" href="#s2-4">2.4 正确性所需的核心不变式</a></div>
+
+<div data-id="64" class="toc-item"><a data-id="65" href="#ch3"><strong data-id="66">第三章：现有设计与 Zave 修正版的逐项差异对比</strong></a></div>
+
+<div data-id="67" class="toc-item"><a data-id="68" href="#ch4"><strong data-id="69">第四章：修正一 —— Stabilize 候选后继存活验证（Bug-S）</strong></a></div>
+<div data-id="70" class="toc-sub"><a data-id="71" href="#s4-1">4.1 问题详述</a></div>
+<div data-id="72" class="toc-sub"><a data-id="73" href="#s4-2">4.2 修正方案</a></div>
+<div data-id="74" class="toc-sub"><a data-id="75" href="#s4-3">4.3 与 v3.0 快速崩溃检测的关系</a></div>
+<div data-id="76" class="toc-sub"><a data-id="77" href="#s4-4">4.4 新增 API 端点</a></div>
+
+<div data-id="78" class="toc-item"><a data-id="79" href="#ch5"><strong data-id="80">第五章：修正二 —— Rectify 替代 Notify（Bug-N）</strong></a></div>
+<div data-id="81" class="toc-sub"><a data-id="82" href="#s5-1">5.1 问题详述</a></div>
+<div data-id="83" class="toc-sub"><a data-id="84" href="#s5-2">5.2 修正方案：Rectify 协议</a></div>
+<div data-id="85" class="toc-sub"><a data-id="86" href="#s5-3">5.3 API 变更</a></div>
+<div data-id="87" class="toc-sub"><a data-id="88" href="#s5-4">5.4 与 check_predecessor 的关系</a></div>
+
+<div data-id="89" class="toc-item"><a data-id="90" href="#ch6"><strong data-id="91">第六章：修正三 —— Join 后继列表完整初始化（Bug-J）</strong></a></div>
+<div data-id="92" class="toc-sub"><a data-id="93" href="#s6-1">6.1 问题详述</a></div>
+<div data-id="94" class="toc-sub"><a data-id="95" href="#s6-2">6.2 修正方案</a></div>
+<div data-id="96" class="toc-sub"><a data-id="97" href="#s6-3">6.3 单节点网络的特殊处理</a></div>
+
+<div data-id="98" class="toc-item"><a data-id="99" href="#ch7"><strong data-id="100">第七章：修正四 —— 有序后继列表不变式（Bug-O）</strong></a></div>
+<div data-id="101" class="toc-sub"><a data-id="102" href="#s7-1">7.1 不变式定义</a></div>
+<div data-id="103" class="toc-sub"><a data-id="104" href="#s7-2">7.2 不变式的维护机制</a></div>
+<div data-id="105" class="toc-sub"><a data-id="106" href="#s7-3">7.3 不变式与 v3.0 动态后继列表的关系</a></div>
+
+<div data-id="107" class="toc-item"><a data-id="108" href="#ch8"><strong data-id="109">第八章：修正五 —— 稳定基（Stable Base）要求（Bug-B）</strong></a></div>
+<div data-id="110" class="toc-sub"><a data-id="111" href="#s8-1">8.1 稳定基的定义</a></div>
+<div data-id="112" class="toc-sub"><a data-id="113" href="#s8-2">8.2 稳定基的部署要求</a></div>
+<div data-id="114" class="toc-sub"><a data-id="115" href="#s8-3">8.3 稳定基与 Tracker 的关系</a></div>
+<div data-id="116" class="toc-sub"><a data-id="117" href="#s8-4">8.4 稳定基配置参数</a></div>
+
+<div data-id="118" class="toc-item"><a data-id="119" href="#ch9"><strong data-id="120">第九章：不变式监控与验证机制</strong></a></div>
+<div data-id="121" class="toc-sub"><a data-id="122" href="#s9-1">9.1 不变式监控周期任务</a></div>
+<div data-id="123" class="toc-sub"><a data-id="124" href="#s9-2">9.2 不变式违反的处理策略</a></div>
+
+<div data-id="125" class="toc-item"><a data-id="126" href="#ch10"><strong data-id="127">第十章：数据结构与 API 变更</strong></a></div>
+<div data-id="128" class="toc-sub"><a data-id="129" href="#s10-1">10.1 NodeState 扩展</a></div>
+<div data-id="130" class="toc-sub"><a data-id="131" href="#s10-2">10.2 新增 / 变更 API</a></div>
+<div data-id="132" class="toc-sub"><a data-id="133" href="#s10-3">10.3 get_state RPC 响应格式</a></div>
+
+<div data-id="134" class="toc-item"><a data-id="135" href="#ch11"><strong data-id="136">第十一章：边缘情况与处理策略（≥20 个场景）</strong></a></div>
+
+<div data-id="137" class="toc-item"><a data-id="138" href="#ch12"><strong data-id="139">第十二章：对 v2.0–v4.0 扩展的影响分析</strong></a></div>
+<div data-id="140" class="toc-sub"><a data-id="141" href="#s12-1">12.1 对 v2.0（Ed25519 身份验证）的影响</a></div>
+<div data-id="142" class="toc-sub"><a data-id="143" href="#s12-2">12.2 对 v3.0（网络优化）的影响</a></div>
+<div data-id="144" class="toc-sub"><a data-id="145" href="#s12-3">12.3 对 v4.0（虚拟节点）的影响</a></div>
+
+<div data-id="146" class="toc-item"><a data-id="147" href="#ch13"><strong data-id="148">第十三章：配置参数与实现建议</strong></a></div>
+<div data-id="149" class="toc-sub"><a data-id="150" href="#s13-1">13.1 新增配置参数</a></div>
+<div data-id="151" class="toc-sub"><a data-id="152" href="#s13-2">13.2 实现建议（Go 语言）</a></div>
+<div data-id="153" class="toc-sub"><a data-id="154" href="#s13-3">13.3 迁移路径（从 v4.0 升级至 v5.0）</a></div>
+
+<!-- ============================================================ -->
+<!--  第一章                                                       -->
+<!-- ============================================================ -->
+
+<hr data-id="155" class="chapter-divider">
+<h1 data-id="156" id="ch1">第一章：背景与设计目标</h1>
+
+<h2 data-id="157" id="s1-1">1.1 背景</h2>
+
+<p data-id="158">v1.0 建立了基于 Chord 算法的 DHT（分布式哈希表，Distributed Hash Table）核心骨架：SHA-1（m=160）环形 ID 空间、手指表（Finger Table）、后继列表（Successor List，r=3）、RESTful HTTP+JSON 通信协议。v2.0 在此基础上引入了 Ed25519 公钥证书体系，为节点身份验证和报文完整性保护提供密码学基础。v3.0 在系统层面进行了全面性能优化，引入自适应维护调度（Adaptive Maintenance Scheduling）、延迟感知路由（Latency-Aware Routing）与动态后继列表（默认 r=5）。v4.0 在逻辑层面引入虚拟节点（Virtual Node，VNode）机制，允许单台物理机托管多个 VNode，提升负载均衡能力与环空间利用率。</p>
+
+<p data-id="159">然而，v1.0–v4.0 在环维护协议的正确性上存在根本性缺陷——这些缺陷直到 Pamela Zave 于 2017 年在 IEEE Transactions on Software Engineering 上发表论文《How to Make Chord Correct》（arXiv:1502.06461）才被严格形式化地揭示。Zave 的核心发现是：原始 Chord 论文（Stoica et al., 2001）中声称的七个不变式（Invariants）<strong data-id="160">没有一个是真正的不变式</strong>，原始的环维护协议在其自身声称的操作假设下是<strong data-id="161">不正确</strong>的（incorrect）。</p>
+
+<p data-id="162">这一发现并不意味着 Chord 算法在工程实践中完全不可用——在网络规模足够大、节点失效率较低时，原始协议的错误往往难以被触发。但在小型网络、频繁的并发加入/离开、或节点批量崩溃场景下，原始协议的缺陷会导致环断裂（Ring Partition）、路由失效（Routing Failure）乃至整个 DHT 网络的永久性不可用。v5.0 的任务正是系统性地弥补这些缺陷。</p>
+
+<h2 data-id="163" id="s1-2">1.2 设计目标</h2>
+
+<p data-id="164">本文档（v5.0）的核心目标如下：</p>
+<ol data-id="165">
+    <li data-id="166"><strong data-id="167">精确对应缺陷</strong>：精确描述 Zave 2017 发现的每一个缺陷，并与 v1.0–v4.0 的具体实现条款逐一对应。</li>
+    <li data-id="168"><strong data-id="169">完整集成修正</strong>：将每项修正严格集成到现有协议中，保持 v1.0–v4.0 的 API 框架、Ed25519 签名体系和 VNode 机制不变。</li>
+    <li data-id="170"><strong data-id="171">定义核心不变式</strong>：明确定义 <strong data-id="172">OrderedSuccessorLists（有序后继列表不变式）</strong>，并将其作为系统正确性的核心归纳不变式，贯穿所有维护操作。</li>
+    <li data-id="173"><strong data-id="174">引入稳定基概念</strong>：引入 <strong data-id="175">稳定基（Stable Base）</strong> 概念，明确网络正确运行所需的最小永久成员数量，提供运维指导。</li>
+    <li data-id="176"><strong data-id="177">向后兼容</strong>：所有 API 变更保持向后兼容，现有 v4.0 节点可平滑升级至 v5.0，不需要协调式全网停机。</li>
+</ol>
+
+<h2 data-id="178" id="s1-3">1.3 不在设计范围内</h2>
+
+<p data-id="179">以下内容明确排除在 v5.0 设计范围之外：</p>
+<ul data-id="180">
+    <li data-id="181">不修改 ID 空间（SHA-1, m=160）、一致性哈希（Consistent Hashing）规则、RESTful API 基本格式。</li>
+    <li data-id="182">不修改 v2.0 Ed25519 签名体系和证书格式。</li>
+    <li data-id="183">不修改 v4.0 VNode 和 VNodeProof 凭证系统。</li>
+    <li data-id="184">不引入拜占庭容错（Byzantine Fault Tolerance，BFT）或恶意节点容忍机制。</li>
+    <li data-id="185">不引入数据复制（Replication）或数据迁移（Data Migration）协议的修改。</li>
+</ul>
+
+<!-- ============================================================ -->
+<!--  第二章                                                       -->
+<!-- ============================================================ -->
+
+<hr data-id="186" class="chapter-divider">
+<h1 data-id="187" id="ch2">第二章：Zave 2017 核心发现摘要</h1>
+
+<h2 data-id="188" id="s2-1">2.1 论文背景</h2>
+
+<p data-id="189">Pamela Zave 于 2015 年以 arXiv 预印本形式发布（2017 年正式发表于 IEEE Transactions on Software Engineering，第 43 卷第 12 期，1144–1156 页）的论文《How to Make Chord Correct》，通过形式化方法（Formal Methods）——具体为 Alloy 规格语言（Alloy Specification Language）——对原始 Chord 协议进行了严格的机器辅助分析。该论文是分布式系统协议验证领域的重要成果，也是近年来对工业界影响最深的形式化验证案例之一。</p>
+
+<p data-id="190">Alloy 是一种基于关系逻辑（Relational Logic）的形式化建模语言，能够自动枚举所有满足约束的有限状态实例，从而发现反例（Counterexample）。Zave 利用 Alloy Analyzer 对 Chord 协议的各个组件进行建模，并系统性地发现了原始论文中声称的不变式在特定场景下均可被违反。</p>
+
+<h2 data-id="191" id="s2-2">2.2 七个"不变式"均不成立</h2>
+
+<p data-id="192">原始 Chord 论文（Stoica et al., 2001）声称协议在以下七个属性上可以保证正确性，但 Zave 的形式化分析证明它们<strong data-id="193">没有一个是真正的不变式</strong>：</p>
+
+<ol data-id="194">
+    <li data-id="195">所有节点最终可相互到达（Eventually Reachable）</li>
+    <li data-id="196">所有正确节点能正确找到任意 ID 的后继</li>
+    <li data-id="197">每个节点的后继列表覆盖 r 个最近后继</li>
+    <li data-id="198">手指表最终稳定收敛（Finger Table Convergence）</li>
+    <li data-id="199">节点加入后最终被所有其他节点感知</li>
+    <li data-id="200">节点离开后其负责范围被相邻节点接管</li>
+    <li data-id="201">整个环构成单一连通分量（Single Connected Component）</li>
+</ol>
+
+<p data-id="202">Zave 的分析表明，在小网络（节点数少时）和并发加入/离开（Concurrent Join/Leave）场景下，上述所有性质均可被违反。尤其值得关注的是，这些违反并非依赖拜占庭节点或恶意行为——仅仅是节点在合法操作时序下的正常崩溃（Crash Failure）即可触发。</p>
+
+<h2 data-id="203" id="s2-3">2.3 五大核心缺陷（对照 v1.0 实现）</h2>
+
+<p data-id="204" class="section-label">缺陷 1（Bug-S）</p>
+<p data-id="205"><strong data-id="206">Stabilize 候选后继未做存活验证</strong></p>
+<p data-id="207">Stabilize 在发现候选新后继 x（来自 <code data-id="208">successor.predecessor</code>）后，未验证 x 是否存活即直接将 <code data-id="209">successor</code> 更新为 x。死亡节点的前驱引用可导致 Stabilize 将一个已崩溃节点纳入后继链。对应 v1.0 §4.4 Stabilize 实现。</p>
+
+<p data-id="210" class="section-label">缺陷 2（Bug-N）</p>
+<p data-id="211"><strong data-id="212">Notify 未检查现有前驱存活性</strong></p>
+<p data-id="213">Notify 仅通过 ID 范围判断是否接受新前驱，未检查现有前驱是否仍然存活。Zave 将此操作重命名为 <strong data-id="214">Rectify</strong>，并要求在拒绝候选人之前先验证现有前驱的存活性。对应 v1.0 §4.5 Notify 实现。</p>
+
+<p data-id="215" class="section-label">缺陷 3（Bug-J）</p>
+<p data-id="216"><strong data-id="217">Join 后继列表初始化不完整</strong></p>
+<p data-id="218">新节点 Join 时仅获取后继节点地址，后继列表未从后继节点的后继列表中完整初始化。这导致新节点的后继列表在初始阶段是残缺的，无法满足有序后继列表不变式。对应 v1.0 §4.1 Join 步骤 4c。</p>
+
+<p data-id="219" class="section-label">缺陷 4（Bug-O）</p>
+<p data-id="220"><strong data-id="221">缺乏有序后继列表不变式</strong></p>
+<p data-id="222">v1.0–v4.0 从未定义"后继列表必须是环上 r 个连续存活后继的有序序列"这一关键不变式。Zave 证明此不变式（OrderedSuccessorLists）是网络最终一致性（Eventual Reachability）的充要条件。缺乏此不变式意味着后继列表可能包含死亡节点或乱序条目，导致路由错误。</p>
+
+<p data-id="223" class="section-label">缺陷 5（Bug-B）</p>
+<p data-id="224"><strong data-id="225">缺乏稳定基（Stable Base）要求</strong></p>
+<p data-id="226">v1.0 允许任意节点加入/离开，单节点环也被视为合法状态。Zave 证明：网络必须维持至少 r+1 个永久成员构成的稳定基，否则在并发失败场景下环可能永久断裂成无法合并的孤立片段。对于 r=3，稳定基至少需要 4 个永久节点；对于 v3.0 默认 r=5，稳定基至少需要 6 个永久节点。</p>
+
+<h2 data-id="227" id="s2-4">2.4 正确性所需的核心不变式</h2>
+
+<p data-id="228">Zave 证明以下<strong data-id="229">单一归纳不变式</strong>是 Chord 最终一致性的充分条件：</p>
+
+<blockquote data-id="230">
+    <strong data-id="231">OrderedSuccessorLists</strong>：对于环上每个节点 n，其后继列表 <code data-id="232">successor_list</code> 是从 n 的直接后继开始，沿顺时针方向 r 个连续存活节点的有序序列。
+</blockquote>
+
+<p data-id="233">该不变式"极其简单，与任何所期望的系统属性都不相似"（Zave 原话），但却是整个正确性证明的基础。Zave 进一步证明：只要 OrderedSuccessorLists 不变式在某一时刻成立，并且 Stabilize 和 Rectify 均按修正后的语义运行，则该不变式在所有后续合法操作（Join、Leave、Stabilize、Rectify）后依然成立——即它是一个真正的归纳不变式（Inductive Invariant）。</p>
+
+<!-- ============================================================ -->
+<!--  第三章                                                       -->
+<!-- ============================================================ -->
+
+<hr data-id="234" class="chapter-divider">
+<h1 data-id="235" id="ch3">第三章：现有设计与 Zave 修正版的逐项差异对比</h1>
+
+<p data-id="236">下表对 v1.0–v4.0 现有行为与 Zave 2017 修正要求进行逐项对比，涵盖全部五大缺陷及其相关联的协议细节。严重度评级参考对环正确性的潜在影响程度。</p>
+
+<table data-id="237">
+    <colgroup data-id="238">
+        <col data-id="239" style="width: 20%;">
+        <col data-id="240" style="width: 28%;">
+        <col data-id="241" style="width: 28%;">
+        <col data-id="242" style="width: 12%;">
+        <col data-id="243" style="width: 12%;">
+    </colgroup>
+    <thead data-id="244">
+        <tr data-id="245">
+            <th data-id="246">对比项</th>
+            <th data-id="247">v1.0–v4.0 现有行为</th>
+            <th data-id="248">Zave 2017 修正要求</th>
+            <th data-id="249">缺陷编号</th>
+            <th data-id="250">严重度</th>
+        </tr>
+    </thead>
+    <tbody data-id="251">
+        <tr data-id="252">
+            <td data-id="253">Stabilize 候选后继验证</td>
+            <td data-id="254">发现 x = succ.predecessor 后直接更新 successor = x，无存活检查</td>
+            <td data-id="255">采纳 x 前必须先 ping x，确认存活后才更新</td>
+            <td data-id="256">Bug-S</td>
+            <td data-id="257">高</td>
+        </tr>
+        <tr data-id="258">
+            <td data-id="259">Notify/Rectify 语义</td>
+            <td data-id="260">仅比较 ID 范围，不检查现有前驱存活性</td>
+            <td data-id="261">若现有前驱不可达，则无条件接受候选；否则才比较 ID</td>
+            <td data-id="262">Bug-N</td>
+            <td data-id="263">高</td>
+        </tr>
+        <tr data-id="264">
+            <td data-id="265">Join 后继列表初始化</td>
+            <td data-id="266">仅将 successor 设为列表第一项，列表其余部分从 successor 的列表截取（顺序可能错误）</td>
+            <td data-id="267">新节点后继列表 = [successor] + successor.successor_list[0..r-2]，确保从第一刻起满足 OrderedSuccessorLists</td>
+            <td data-id="268">Bug-J</td>
+            <td data-id="269">高</td>
+        </tr>
+        <tr data-id="270">
+            <td data-id="271">有序后继列表不变式</td>
+            <td data-id="272">未定义；后继列表可含死亡节点或乱序条目</td>
+            <td data-id="273">定义并主动维护 OrderedSuccessorLists：r 个顺时针连续存活后继的有序序列</td>
+            <td data-id="274">Bug-O</td>
+            <td data-id="275">极高</td>
+        </tr>
+        <tr data-id="276">
+            <td data-id="277">稳定基（Stable Base）</td>
+            <td data-id="278">无要求；单节点环合法</td>
+            <td data-id="279">网络必须维持 ≥ r+1 个永久成员（物理节点）；VNode 不计入稳定基计数</td>
+            <td data-id="280">Bug-B</td>
+            <td data-id="281">高</td>
+        </tr>
+        <tr data-id="282">
+            <td data-id="283">Stabilize 原子性</td>
+            <td data-id="284">分两步：先查 successor.predecessor，再查 successor.successor_list，中间可能状态不一致</td>
+            <td data-id="285">应在一次 RPC 中同时获取 predecessor 和 successor_list，保证逻辑原子性</td>
+            <td data-id="286">Bug-S</td>
+            <td data-id="287">中</td>
+        </tr>
+        <tr data-id="288">
+            <td data-id="289">单节点环 self-loop</td>
+            <td data-id="290">successor = self, predecessor = None 视为完全合法初始状态</td>
+            <td data-id="291">仅当该节点本身是稳定基的一部分时方可长期维持；否则必须尝试加入更大网络</td>
+            <td data-id="292">Bug-B</td>
+            <td data-id="293">中</td>
+        </tr>
+        <tr data-id="294">
+            <td data-id="295">v4.0 VNode 稳定基计数</td>
+            <td data-id="296">每个 VNode 视为独立节点</td>
+            <td data-id="297">稳定基计数按物理节点（Anchor）计，而非 VNode 数</td>
+            <td data-id="298">Bug-B</td>
+            <td data-id="299">中</td>
+        </tr>
+    </tbody>
+</table>
+
+<!-- ============================================================ -->
+<!--  第四章                                                       -->
+<!-- ============================================================ -->
+
+<hr data-id="300" class="chapter-divider">
+<h1 data-id="301" id="ch4">第四章：修正一 —— Stabilize 候选后继存活验证（Bug-S）</h1>
+
+<h2 data-id="302" id="s4-1">4.1 问题详述</h2>
+
+<p data-id="303">v1.0 §4.4 Stabilize 伪代码（原始版）如下所示。问题集中在未经存活验证即采纳候选后继 x：</p>
+
+<pre data-id="304">
+# v1.0 原始 Stabilize（存在 Bug-S）
+function Stabilize():
+    x = successor.get_predecessor()
+    if x != None and x.id ∈ (self.id, successor.id):
+        self.successor = x          # ← 危险：x 可能已崩溃！
+    self.successor.notify(self)
+    self.successor_list = [self.successor] + self.successor.get_successor_list()[0..r-2]
+</pre>
+
+<p data-id="305"><strong data-id="306">风险场景</strong>：节点 A 的 successor 为 B，B 的 predecessor 为 C（C 已崩溃但 B 尚未感知，因为 B 的 <code data-id="307">check_predecessor</code> 任务尚未在本周期内运行）。A 的 Stabilize 调用 <code data-id="308">B.get_predecessor()</code> 得到 C，C.id 满足范围条件，于是将 <code data-id="309">self.successor = C</code>（已死亡）。下一次 Stabilize 中，A 尝试与 C 通信失败，触发了后继列表回退——但若此时后继列表也因 Bug-J 而不完整，则整条路由链可能永久断裂。</p>
+
+<div data-id="310" class="callout callout-warning">
+    <div data-id="311" class="callout-label">⚠ 风险说明</div>
+    <p data-id="312">Bug-S 与 Bug-J 联合出现时（这在 v1.0–v4.0 实现中始终如此），危害性最高。仅凭 v3.0 的快速崩溃检测（Fast Crash Detection）无法覆盖此场景，因为快速崩溃检测只针对<strong data-id="313">直接后继</strong>，而非后继所引用的第三方节点。</p>
+</div>
+
+<h2 data-id="314" id="s4-2">4.2 修正方案</h2>
+
+<p data-id="315">在采纳候选后继之前，增加存活验证（Liveness Ping）步骤。同时，将两次独立 RPC（get_predecessor + get_successor_list）合并为一次原子 RPC（get_state），避免中间状态不一致：</p>
+
+<pre data-id="316">
+# v5.0 修正版 Stabilize（Bug-S 修正）
+function Stabilize():
+    # 原子获取 successor 的 predecessor 和 successor_list（一次 RPC）
+    succ_info = self.successor.get_state()   # 返回 {predecessor, successor_list}
+
+    x = succ_info.predecessor
+    if x != None and x.id ∈ (self.id, successor.id):
+        # Zave 修正：采纳 x 前必须验证存活性
+        if self.ping_liveness(x):            # ← 新增存活验证
+            self.successor = x
+        # 若 ping 失败，忽略 x，保持原有 successor 不变
+        # else: skip，不更新 successor
+
+    self.successor.rectify(self)             # 改为 rectify（见第五章）
+
+    # 利用原子获取的 successor_list 更新本节点列表
+    self.successor_list = [self.successor] + succ_info.successor_list[:r-1]
+    self.validate_successor_list()           # 验证有序性（见第七章）
+</pre>
+
+<p data-id="317"><strong data-id="318">关键变更说明</strong>：</p>
+<ul data-id="319">
+    <li data-id="320"><code data-id="321">ping_liveness(x)</code>：使用专用的存活超时参数 <code data-id="322">ping_liveness_timeout</code>（建议 2s），独立于业务 RPC 超时，确保存活判断的高效性。</li>
+    <li data-id="323"><code data-id="324">get_state()</code>：新增原子 RPC，一次性返回 <code data-id="325">{predecessor, successor_list}</code>，保证两个字段来自同一状态快照，消除分步查询的竞态窗口。</li>
+    <li data-id="326"><code data-id="327">rectify()</code>：替代原来的 <code data-id="328">notify()</code>，包含前驱存活验证逻辑（见第五章）。</li>
+    <li data-id="329"><code data-id="330">validate_successor_list()</code>：每次 Stabilize 完成后执行，确保后继列表满足 OrderedSuccessorLists 不变式（见第七章）。</li>
+</ul>
+
+<h2 data-id="331" id="s4-3">4.3 与 v3.0 快速崩溃检测的关系</h2>
+
+<p data-id="332">v3.0 §3.3 引入了快速崩溃检测（Fast Crash Detection），通过更短的心跳间隔感知后继崩溃。Bug-S 修正与快速崩溃检测之间的关系如下：</p>
+
+<table data-id="333">
+    <colgroup data-id="334">
+        <col data-id="335" style="width: 30%;">
+        <col data-id="336" style="width: 35%;">
+        <col data-id="337" style="width: 35%;">
+    </colgroup>
+    <thead data-id="338">
+        <tr data-id="339">
+            <th data-id="340">维度</th>
+            <th data-id="341">v3.0 快速崩溃检测</th>
+            <th data-id="342">v5.0 Stabilize 存活验证</th>
+        </tr>
+    </thead>
+    <tbody data-id="343">
+        <tr data-id="344">
+            <td data-id="345">监控对象</td>
+            <td data-id="346"><strong data-id="347">直接后继</strong>的存活性</td>
+            <td data-id="348">Stabilize 候选后继（第三方节点 x）的存活性</td>
+        </tr>
+        <tr data-id="349">
+            <td data-id="350">触发方式</td>
+            <td data-id="351">周期性心跳主动探测</td>
+            <td data-id="352">Stabilize 执行路径中内联触发</td>
+        </tr>
+        <tr data-id="353">
+            <td data-id="354">覆盖场景</td>
+            <td data-id="355">直接后继崩溃，快速切换至 successor_list[1]</td>
+            <td data-id="356">后继的前驱引用指向已崩溃节点，防止错误更新 successor</td>
+        </tr>
+        <tr data-id="357">
+            <td data-id="358">是否互补</td>
+            <td data-id="359" colspan="2" style="text-align: center;">是，两者覆盖不同场景，缺一不可</td>
+        </tr>
+    </tbody>
+</table>
+
+<h2 data-id="360" id="s4-4">4.4 新增 API 端点</h2>
+
+<table data-id="361">
+    <thead data-id="362">
+        <tr data-id="363">
+            <th data-id="364">端点</th>
+            <th data-id="365">方法</th>
+            <th data-id="366">描述</th>
+        </tr>
+    </thead>
+    <tbody data-id="367">
+        <tr data-id="368">
+            <td data-id="369"><code data-id="370">/chord/node/{node_id}/state</code></td>
+            <td data-id="371">GET</td>
+            <td data-id="372">一次性原子返回 <code data-id="373">{predecessor, successor_list, successor_list_valid}</code>，供 Stabilize 使用，避免分步查询竞态</td>
+        </tr>
+    </tbody>
+</table>
+
+<!-- ============================================================ -->
+<!--  第五章                                                       -->
+<!-- ============================================================ -->
+
+<hr data-id="374" class="chapter-divider">
+<h1 data-id="375" id="ch5">第五章：修正二 —— Rectify 替代 Notify（Bug-N）</h1>
+
+<h2 data-id="376" id="s5-1">5.1 问题详述</h2>
+
+<p data-id="377">v1.0 §4.5 Notify 伪代码（原始版）如下所示。问题在于当现有前驱实际已崩溃时，Notify 仍会错误地拒绝合法候选：</p>
+
+<pre data-id="378">
+# v1.0 原始 Notify（存在 Bug-N）
+function Notify(N):
+    if self.predecessor == None:
+        self.predecessor = N           # 无条件接受（正确）
+    elif N.id ∈ (self.predecessor.id, self.id):
+        self.predecessor = N           # 仅比较 ID，不检查现有前驱存活性
+    # else: 拒绝 N（即使现有前驱已崩溃！）← 危险
+</pre>
+
+<p data-id="379"><strong data-id="380">风险场景</strong>：节点 B 的前驱 A 已崩溃，但 B 的 <code data-id="381">check_predecessor</code> 尚未运行（下一周期才会将 predecessor 置 None）。此时节点 C（C.id 不在 A.id 和 B.id 之间）发来 Notify，B 依据 ID 范围判断后错误地拒绝了 C，即使 A 实际上已不可用。这会造成 B 的 predecessor 长时间指向一个死亡节点，导致 Rectify 语义失效，影响环的收敛速度乃至最终一致性。</p>
+
+<div data-id="382" class="callout callout-important">
+    <div data-id="383" class="callout-label">⚡ 重要说明</div>
+    <p data-id="384">Bug-N 与 <code data-id="385">check_predecessor</code> 的周期检测之间存在时序窗口（Time Window）。在该窗口内，Notify 的错误拒绝行为可能被多次 Stabilize 放大，导致环的某段弧上前驱指针长时间混乱。Rectify 修正消除了此时序窗口。</p>
+</div>
+
+<h2 data-id="386" id="s5-2">5.2 修正方案：Rectify 协议</h2>
+
+<p data-id="387">Zave 将此操作重命名为 <strong data-id="388">Rectify（修正）</strong>，语义变更为"在有条件拒绝候选人之前，先验证现有前驱的存活性"：</p>
+
+<pre data-id="389">
+# v5.0 修正版 Rectify（Bug-N 修正）
+function Rectify(N):
+    if self.predecessor == None:
+        self.predecessor = N           # 无前驱时无条件接受
+        return
+
+    # Zave 修正：先检查现有前驱存活性
+    if not self.ping_liveness(self.predecessor):   # ← 新增
+        self.predecessor = N           # 现有前驱已死，无条件接受 N
+        return
+
+    # 现有前驱存活，再比较 ID 范围
+    if N.id ∈ (self.predecessor.id, self.id):
+        self.predecessor = N
+
+    # else: 现有前驱存活且 N.id 不在合法范围内，拒绝 N（此时拒绝是安全的）
+</pre>
+
+<p data-id="390"><strong data-id="391">语义变更的本质</strong>：原始 Notify 的拒绝条件是"ID 不在范围内"；Rectify 的拒绝条件是"现有前驱存活 <strong data-id="392">且</strong> ID 不在范围内"。前者更严格，后者更宽松但更正确。</p>
+
+<h2 data-id="393" id="s5-3">5.3 API 变更</h2>
+
+<table data-id="394">
+    <colgroup data-id="395">
+        <col data-id="396" style="width: 28%;">
+        <col data-id="397" style="width: 28%;">
+        <col data-id="398" style="width: 10%;">
+        <col data-id="399" style="width: 34%;">
+    </colgroup>
+    <thead data-id="400">
+        <tr data-id="401">
+            <th data-id="402">旧端点</th>
+            <th data-id="403">新端点</th>
+            <th data-id="404">方法</th>
+            <th data-id="405">变更说明</th>
+        </tr>
+    </thead>
+    <tbody data-id="406">
+        <tr data-id="407">
+            <td data-id="408"><code data-id="409">/chord/node/{id}/notify</code></td>
+            <td data-id="410"><code data-id="411">/chord/node/{id}/rectify</code></td>
+            <td data-id="412">POST</td>
+            <td data-id="413">语义从"通知"改为"前驱修正"，内部逻辑添加存活验证</td>
+        </tr>
+        <tr data-id="414">
+            <td data-id="415"><code data-id="416">/chord/node/{id}/notify</code>（保留）</td>
+            <td data-id="417">—</td>
+            <td data-id="418">POST</td>
+            <td data-id="419">向后兼容别名，内部重定向至 Rectify 逻辑；v5.0 实现中 /notify 和 /rectify 行为完全一致</td>
+        </tr>
+    </tbody>
+</table>
+
+<div data-id="420" class="callout callout-note">
+    <div data-id="421" class="callout-label">ℹ 向后兼容说明</div>
+    <p data-id="422">保留 <code data-id="423">/notify</code> 端点作为 <code data-id="424">/rectify</code> 的别名（由配置参数 <code data-id="425">rectify_endpoint_alias</code> 控制，默认 <code data-id="426">true</code>），确保尚未升级至 v5.0 的节点仍可正常通信，不需要协调式全网升级。</p>
+</div>
+
+<h2 data-id="427" id="s5-4">5.4 与 check_predecessor 的关系</h2>
+
+<p data-id="428"><code data-id="429">check_predecessor</code> 周期任务（v1.0 §4.7）与 Rectify 形成互补关系，两者不可相互替代：</p>
+
+<table data-id="430">
+    <thead data-id="431">
+        <tr data-id="432">
+            <th data-id="433">维度</th>
+            <th data-id="434">check_predecessor</th>
+            <th data-id="435">Rectify 内嵌 ping</th>
+        </tr>
+    </thead>
+    <tbody data-id="436">
+        <tr data-id="437">
+            <td data-id="438">触发方式</td>
+            <td data-id="439">周期性主动轮询（每个维护周期）</td>
+            <td data-id="440">被动触发（收到 rectify 请求时即时执行）</td>
+        </tr>
+        <tr data-id="441">
+            <td data-id="442">处理结果</td>
+            <td data-id="443">失败时设 predecessor = None，等待下一个 Rectify 请求更新</td>
+            <td data-id="444">失败时直接接受候选 N，无需等待下一周期</td>
+        </tr>
+        <tr data-id="445">
+            <td data-id="446">消除时序窗口</td>
+            <td data-id="447">否（存在周期间隔窗口）</td>
+            <td data-id="448">是（即时处理）</td>
+        </tr>
+        <tr data-id="449">
+            <td data-id="450">网络开销</td>
+            <td data-id="451">固定周期开销</td>
+            <td data-id="452">仅在收到 Rectify 请求时触发，额外开销极小</td>
+        </tr>
+    </tbody>
+</table>
+
+<!-- ============================================================ -->
+<!--  第六章                                                       -->
+<!-- ============================================================ -->
+
+<hr data-id="453" class="chapter-divider">
+<h1 data-id="454" id="ch6">第六章：修正三 —— Join 后继列表完整初始化（Bug-J）</h1>
+
+<h2 data-id="455" id="s6-1">6.1 问题详述</h2>
+
+<p data-id="456">v1.0 §4.1 Join 步骤 4c（原始版）中的后继列表初始化逻辑存在根本性错误：</p>
+
+<pre data-id="457">
+# v1.0 原始 Join 流程片段（存在 Bug-J）
+self.successor = seed.find_successor(self.id)
+self.successor_list = self.successor.get_successor_list()
+# ↑ 此处获取的是 successor 自己的 successor_list，
+#   但未在列表头部加入 successor 本身！
+#   导致新节点的 successor_list[0] != self.successor
+</pre>
+
+<p data-id="458"><strong data-id="459">具体问题示例</strong>：假设网络中存在 A → B → C → D（r=3），新节点 N join 后 successor = B，B 的 successor_list = [C, D, A]。若按原始逻辑：</p>
+<ul data-id="460">
+    <li data-id="461">N.successor_list = [C, D, A]（直接复制 B 的列表）</li>
+    <li data-id="462">正确值应为 N.successor_list = [B, C, D]</li>
+</ul>
+<p data-id="463">N 的后继列表从第一刻起就违反了 OrderedSuccessorLists 不变式：<code data-id="464">successor_list[0]</code> 是 C 而非 B（N 的直接后继），有序性条件第 1 条即被违反。在 Stabilize 收敛之前，N 的路由查询可能直接跳过 B 负责的 ID 范围，造成路由错误或数据丢失。</p>
+
+<h2 data-id="465" id="s6-2">6.2 修正方案</h2>
+
+<pre data-id="466">
+# v5.0 修正版 Join（Bug-J 修正）
+function Join(seed_node):
+    # 步骤 1：通过 seed 找到自己的后继
+    self.successor = seed_node.find_successor(self.id)
+    self.predecessor = None
+    self.state = JOINING
+
+    # 步骤 2：原子获取 successor 的状态（一次 RPC）
+    succ_state = self.successor.get_state()  # 返回 {predecessor, successor_list}
+
+    # Zave 修正：正确构建后继列表
+    # successor_list = [self.successor] + succ_state.successor_list[0..r-2]
+    self.successor_list = [self.successor] + succ_state.successor_list[:r-1]
+
+    # 步骤 3：发送 rectify，告知 successor 自己的存在
+    self.successor.rectify(self)
+
+    # 步骤 4：验证后继列表有序性（确保从第一刻起满足 OrderedSuccessorLists）
+    self.validate_successor_list()
+
+    self.state = ACTIVE
+    # 后续由 Stabilize 周期任务持续维护
+</pre>
+
+<p data-id="467"><strong data-id="468">关键变更说明</strong>：</p>
+<ul data-id="469">
+    <li data-id="470">使用 <code data-id="471">get_state()</code> 原子 RPC 获取 successor 的状态，复用第四章新增端点，避免额外 RPC 开销。</li>
+    <li data-id="472">正确构建后继列表：<code data-id="473">[self.successor] + succ_state.successor_list[:r-1]</code>，确保 <code data-id="474">successor_list[0] == self.successor</code>，满足有序性第 1 条。</li>
+    <li data-id="475">在置 <code data-id="476">ACTIVE</code> 状态之前调用 <code data-id="477">validate_successor_list()</code>，确保节点上线时即满足 OrderedSuccessorLists 不变式。</li>
+</ul>
+
+<h2 data-id="478" id="s6-3">6.3 单节点网络的特殊处理</h2>
+
+<p data-id="479">当新节点 N join 到只有一个节点 S 的网络时：</p>
+<ul data-id="480">
+    <li data-id="481">S.successor = S（自环），S.get_state() 返回 <code data-id="482">{predecessor: None, successor_list: [S]}</code></li>
+    <li data-id="483">N.successor = S</li>
+    <li data-id="484">N.successor_list = [S] + [S][:r-1] = [S, S, S, ...]（重复填充，直到达到 r 个）</li>
+</ul>
+
+<p data-id="485">这是合法的初始状态（因为网络中当前只有 S 是存活节点）。后续随着更多节点 join 并执行 Stabilize，N 的后继列表将逐步修正为真实的 r 个不同节点。<code data-id="486">validate_successor_list()</code> 在此阶段接受重复节点（因为它们确实存活），但会记录日志说明当前处于单节点网络模式。</p>
+
+<!-- ============================================================ -->
+<!--  第七章                                                       -->
+<!-- ============================================================ -->
+
+<hr data-id="487" class="chapter-divider">
+<h1 data-id="488" id="ch7">第七章：修正四 —— 有序后继列表不变式（Bug-O）</h1>
+
+<h2 data-id="489" id="s7-1">7.1 不变式定义</h2>
+
+<p data-id="490"><strong data-id="491">OrderedSuccessorLists（有序后继列表不变式）</strong>正式定义如下：</p>
+
+<blockquote data-id="492">
+    对于环上每个存活节点 n，其后继列表 <code data-id="493">n.successor_list = [s₁, s₂, ..., sᵣ]</code> 满足以下三个条件：<br data-id="494"><br data-id="495">
+    1. <strong data-id="496">有序性</strong>：s₁, s₂, ..., sᵣ 按顺时针方向排列，即 s₁ 是 n 的直接后继，s₂ 是 s₁ 的直接后继，依此类推。<br data-id="497">
+    2. <strong data-id="498">存活性</strong>：列表中所有节点当前均可访问（存活，Alive）。<br data-id="499">
+    3. <strong data-id="500">连续性</strong>：列表构成环上从 n 开始的 r 个连续存活后继的完整序列，中间不存在缺口。
+</blockquote>
+
+<p data-id="501">此不变式是 Zave 证明的核心归纳不变式：<strong data-id="502">若所有节点满足 OrderedSuccessorLists，且 Stabilize 和 Rectify 按修正后语义运行，则 OrderedSuccessorLists 在所有可能的合法操作下保持不变</strong>。这一归纳性保证了协议在无限时间内的最终一致性。</p>
+
+<div data-id="503" class="callout callout-note">
+    <div data-id="504" class="callout-label">ℹ 归纳不变式的意义</div>
+    <p data-id="505">归纳不变式（Inductive Invariant）的价值在于：只需证明（1）初始状态满足该不变式，（2）每次状态转换保持该不变式，即可得出"该不变式在所有可达状态下均成立"的结论，无需对每种状态单独证明。v5.0 的修正正是围绕保持 OrderedSuccessorLists 不变式而设计的。</p>
+</div>
+
+<h2 data-id="506" id="s7-2">7.2 不变式的维护机制</h2>
+
+<p data-id="507"><code data-id="508">validate_successor_list()</code> 函数在每次 Stabilize 完成后调用，是维护 OrderedSuccessorLists 不变式的核心机制：</p>
+
+<pre data-id="509">
+# v5.0 validate_successor_list 实现
+function validate_successor_list():
+    # 第一步：并行 ping 所有列表成员，过滤死亡节点
+    valid_list = []
+    ping_results = parallel_ping(self.successor_list)  # goroutine 并行
+    for i, node in enumerate(self.successor_list):
+        if ping_results[i]:  # 存活
+            valid_list.append(node)
+
+    # 第二步：若列表不足 r 个存活节点，尝试从最后一个存活节点扩展
+    if len(valid_list) < r and len(valid_list) > 0:
+        last = valid_list[-1]
+        extension = last.get_state().successor_list
+        for node in extension:
+            if len(valid_list) >= r:
+                break
+            if node.id != self.id and node not in valid_list:
+                if self.ping_liveness(node):
+                    valid_list.append(node)
+
+    self.successor_list = valid_list[:r]
+
+    # 第三步：验证有序性（断言检查）
+    for i in range(len(self.successor_list) - 1):
+        assert is_between_clockwise(
+            self.id,
+            self.successor_list[i].id,
+            self.successor_list[i+1].id
+        ), f"后继列表有序性违反！位置 {i}: {self.successor_list[i].id} → {self.successor_list[i+1].id}"
+
+    # 第四步：更新 self.successor 为列表首项
+    if len(self.successor_list) > 0:
+        self.successor = self.successor_list[0]
+    else:
+        # 所有后继不可达，进入 ISOLATED 状态
+        self.state = ISOLATED
+        self.trigger_isolated_recovery()
+</pre>
+
+<h2 data-id="510" id="s7-3">7.3 不变式与 v3.0 动态后继列表的关系</h2>
+
+<p data-id="511">v3.0 §4.1 引入了动态后继列表长度（默认 r=5，QUIET_MAINTENANCE 模式下 r=3）。v5.0 对此的约束如下：</p>
+
+<ul data-id="512">
+    <li data-id="513">动态调整 r 时，OrderedSuccessorLists 不变式必须始终满足，不因 r 变化而临时豁免。</li>
+    <li data-id="514">在 ACTIVE_MAINTENANCE 模式下，r=5；在 QUIET_MAINTENANCE 模式下，r=3。两种模式下均须满足 OrderedSuccessorLists。</li>
+    <li data-id="515">每次 r 从大变小（如 5→3）时，直接截取列表前 r 项即可（已满足有序性）；从小变大（如 3→5）时，必须立即重新执行 <code data-id="516">validate_successor_list()</code> 以补充至新的 r 个节点。</li>
+    <li data-id="517">稳定基要求（r+1 个永久节点）也随 r 变化而动态调整。</li>
+</ul>
+
+<!-- ============================================================ -->
+<!--  第八章                                                       -->
+<!-- ============================================================ -->
+
+<hr data-id="518" class="chapter-divider">
+<h1 data-id="519" id="ch8">第八章：修正五 —— 稳定基（Stable Base）要求（Bug-B）</h1>
+
+<h2 data-id="520" id="s8-1">8.1 稳定基的定义</h2>
+
+<p data-id="521"><strong data-id="522">Stable Base（稳定基）</strong> 正式定义如下：</p>
+
+<blockquote data-id="523">
+    网络中一个大小为 <strong data-id="524">r+1</strong> 的永久节点集合，这些节点在网络运行期间始终保持存活（即不执行 Leave 操作，且在崩溃后能迅速恢复）。稳定基是 Chord 协议正确性的先决条件（Precondition），而非运行时的结果。
+</blockquote>
+
+<p data-id="525"><strong data-id="526">为什么需要 r+1 而不是 r？</strong></p>
+<p data-id="527">若稳定基大小等于 r，则当这 r 个节点同时出现在某节点的后继列表中时，任何一个失败都可能导致列表长度低于安全阈值（r-1），使 <code data-id="528">validate_successor_list()</code> 无法通过扩展操作补充到 r 个节点（因为扩展依赖最后存活节点的 successor_list，而此时最后存活节点也在稳定基中，其 successor_list 可能也出现空洞）。r+1 提供了一个额外的冗余保护层，保证即使一个稳定基节点临时失联，列表扩展操作仍有足够的节点可用。</p>
+
+<p data-id="529">对于 v3.0 的默认 r=5：稳定基至少需要 <strong data-id="530">6 个永久物理节点</strong>。</p>
+
+<h2 data-id="531" id="s8-2">8.2 稳定基的部署要求</h2>
+
+<ol data-id="532">
+    <li data-id="533"><strong data-id="534">网络初始化顺序</strong>：在第一个非稳定基节点加入之前，稳定基的所有 r+1 个节点必须已形成正确的环，且所有节点的 OrderedSuccessorLists 不变式均已满足。</li>
+    <li data-id="535"><strong data-id="536">稳定基成员约束</strong>：稳定基节点不执行正常的 Leave 流程（或具有人工保障机制确保其可用性，如专用机房、多副本部署等）。</li>
+    <li data-id="537"><strong data-id="538">VNode 计数规则</strong>：v4.0 的 VNode 不计入稳定基节点数——稳定基按<strong data-id="539">物理节点（Anchor）</strong>计数。若一个 Anchor 托管 3 个 VNode，稳定基计数仍为 1，而非 3。</li>
+    <li data-id="540"><strong data-id="541">稳定基内部协议</strong>：稳定基内部节点之间运行标准 Chord 维护协议（Stabilize、Rectify），不需要特殊协议。稳定基的"特殊性"仅体现在运维层面（永久在线保证），而非协议层面。</li>
+</ol>
+
+<h2 data-id="542" id="s8-3">8.3 稳定基与 Tracker 的关系</h2>
+
+<p data-id="543">v1.0 §3.4 指出 Tracker（引导追踪器）是可选的引导辅助节点，不参与路由。v5.0 建议扩展 Tracker 职责，使其承担稳定基监控功能：</p>
+
+<ul data-id="544">
+    <li data-id="545"><strong data-id="546">新职责</strong>：Tracker 维护稳定基成员列表（通过配置文件静态加载），并周期性检查每个成员的存活状态（每 <code data-id="547">stable_base_check_interval</code> = 30s 一次）。</li>
+    <li data-id="548"><strong data-id="549">新职责</strong>：Tracker 在健康检查 API 中暴露当前稳定基状态（存活成员数、是否低于 r+1 阈值）。</li>
+    <li data-id="550"><strong data-id="551">新 API</strong>：<code data-id="552">GET /tracker/stable_base</code> 返回稳定基成员列表及其实时存活状态，供运维人员监控和告警系统集成。</li>
+    <li data-id="553"><strong data-id="554">告警阈值</strong>：当存活稳定基成员数低于 r+1 时，Tracker 向告警系统发送警告；低于 ⌊(r+1)/2⌋ + 1 时，发送紧急告警（此时环可能无法自愈）。</li>
+</ul>
+
+<h2 data-id="555" id="s8-4">8.4 稳定基配置参数</h2>
+
+<table data-id="556">
+    <colgroup data-id="557">
+        <col data-id="558" style="width: 35%;">
+        <col data-id="559" style="width: 18%;">
+        <col data-id="560" style="width: 47%;">
+    </colgroup>
+    <thead data-id="561">
+        <tr data-id="562">
+            <th data-id="563">参数</th>
+            <th data-id="564">默认值</th>
+            <th data-id="565">说明</th>
+        </tr>
+    </thead>
+    <tbody data-id="566">
+        <tr data-id="567">
+            <td data-id="568"><code data-id="569">stable_base_min_size</code></td>
+            <td data-id="570">r+1</td>
+            <td data-id="571">稳定基最小成员数，等于后继列表长度加 1</td>
+        </tr>
+        <tr data-id="572">
+            <td data-id="573"><code data-id="574">stable_base_members</code></td>
+            <td data-id="575">[]</td>
+            <td data-id="576">稳定基成员的 URI 列表（配置文件中静态配置，如 ["http://node-a:8080", ...]）</td>
+        </tr>
+        <tr data-id="577">
+            <td data-id="578"><code data-id="579">stable_base_check_interval</code></td>
+            <td data-id="580">30s</td>
+            <td data-id="581">Tracker 检查稳定基成员存活性的周期</td>
+        </tr>
+    </tbody>
+</table>
+
+<!-- ============================================================ -->
+<!--  第九章                                                       -->
+<!-- ============================================================ -->
+
+<hr data-id="582" class="chapter-divider">
+<h1 data-id="583" id="ch9">第九章：不变式监控与验证机制</h1>
+
+<h2 data-id="584" id="s9-1">9.1 不变式监控周期任务</h2>
+
+<p data-id="585">在现有维护任务调度框架（v3.0 §5.1 自适应维护）基础上，v5.0 新增以下三个周期性任务，集成至现有调度器：</p>
+
+<table data-id="586">
+    <colgroup data-id="587">
+        <col data-id="588" style="width: 28%;">
+        <col data-id="589" style="width: 30%;">
+        <col data-id="590" style="width: 42%;">
+    </colgroup>
+    <thead data-id="591">
+        <tr data-id="592">
+            <th data-id="593">任务名</th>
+            <th data-id="594">触发时机</th>
+            <th data-id="595">执行内容</th>
+        </tr>
+    </thead>
+    <tbody data-id="596">
+        <tr data-id="597">
+            <td data-id="598"><code data-id="599">verify_successor_list</code></td>
+            <td data-id="600">每次 Stabilize 完成后（内联触发）</td>
+            <td data-id="601">调用 <code data-id="602">validate_successor_list()</code>，修剪死亡节点，补充后继至 r 个，更新 <code data-id="603">self.successor</code></td>
+        </tr>
+        <tr data-id="604">
+            <td data-id="605"><code data-id="606">check_stable_base</code></td>
+            <td data-id="607">每 30s（仅 Tracker 节点）</td>
+            <td data-id="608">检查稳定基成员存活性，更新存活计数，低于阈值时记录告警日志并推送告警</td>
+        </tr>
+        <tr data-id="609">
+            <td data-id="610"><code data-id="611">invariant_audit</code></td>
+            <td data-id="612">每 5 分钟（仅调试模式，由 <code data-id="613">invariant_audit_interval</code> 参数控制）</td>
+            <td data-id="614">打印节点当前 successor_list、predecessor、state 快照，标注是否满足 OrderedSuccessorLists，输出至调试日志</td>
+        </tr>
+    </tbody>
+</table>
+
+<p data-id="615">上述任务均集成至 v3.0 的自适应维护调度器，在 ACTIVE_MAINTENANCE 和 QUIET_MAINTENANCE 两种模式下均可运行，不引入新的调度框架。</p>
+
+<h2 data-id="616" id="s9-2">9.2 不变式违反的处理策略</h2>
+
+<p data-id="617">当 <code data-id="618">validate_successor_list()</code> 检测到 OrderedSuccessorLists 不变式违反时，按以下优先级依次处理：</p>
+
+<ol data-id="619">
+    <li data-id="620"><strong data-id="621">记录告警日志</strong>：包含当前 <code data-id="622">successor_list</code> 快照（含各节点 ID 和 URI）、违反的具体条件（有序性/存活性/连续性），以及时间戳。</li>
+    <li data-id="623"><strong data-id="624">尝试在线修复</strong>：从最近存活的后继节点重建后继列表（调用该节点的 <code data-id="625">get_state()</code> 获取其 <code data-id="626">successor_list</code>，递归补充）。</li>
+    <li data-id="627"><strong data-id="628">更新 successor</strong>：将 <code data-id="629">self.successor</code> 更新为修复后列表的首项，确保下次 Stabilize 能从正确的后继出发。</li>
+    <li data-id="630"><strong data-id="631">若无法修复</strong>（所有后继均不可达）：将节点状态置为 <code data-id="632">ISOLATED</code>，触发 v3.0 §4.3 多路径 ISOLATED 恢复流程（尝试 Finger Table、Tracker 引导、多跳路径等）。</li>
+    <li data-id="633"><strong data-id="634">恢复后重验证</strong>：ISOLATED 恢复成功后，立即重新执行 <code data-id="635">validate_successor_list()</code>，确认不变式已重新满足后，再将节点状态置为 <code data-id="636">ACTIVE</code>。</li>
+</ol>
+
+<!-- ============================================================ -->
+<!--  第十章                                                       -->
+<!-- ============================================================ -->
+
+<hr data-id="637" class="chapter-divider">
+<h1 data-id="638" id="ch10">第十章：数据结构与 API 变更</h1>
+
+<h2 data-id="639" id="s10-1">10.1 NodeState 扩展</h2>
+
+<p data-id="640">在 v4.0 NodeInfo Schema 基础上，v5.0 新增以下三个字段，用于反映不变式验证状态和稳定基成员身份：</p>
+
+<pre data-id="641">
+{
+  "node_id": "...",
+  "uri": "...",
+  "successor": { "node_id": "...", "uri": "..." },
+  "predecessor": { "node_id": "...", "uri": "..." },
+  "successor_list": [
+    { "node_id": "...", "uri": "..." }
+  ],
+  "finger_table": [ ... ],
+  "state": "ACTIVE",
+  "vnode_proof": { ... },
+
+  // v5.0 新增字段
+  "successor_list_valid": true,
+  // 当前 successor_list 是否满足 OrderedSuccessorLists 不变式（三个条件均满足为 true）
+
+  "last_invariant_check": "2026-06-04T10:00:00Z",
+  // 最后一次 validate_successor_list() 执行时间（ISO 8601 格式）
+
+  "is_stable_base_member": false
+  // 是否为稳定基成员（由配置文件中的 stable_base_members 决定，运行时只读）
+}
+</pre>
+
+<h2 data-id="642" id="s10-2">10.2 新增 / 变更 API</h2>
+
+<table data-id="643">
+    <colgroup data-id="644">
+        <col data-id="645" style="width: 38%;">
+        <col data-id="646" style="width: 10%;">
+        <col data-id="647" style="width: 16%;">
+        <col data-id="648" style="width: 36%;">
+    </colgroup>
+    <thead data-id="649">
+        <tr data-id="650">
+            <th data-id="651">端点</th>
+            <th data-id="652">方法</th>
+            <th data-id="653">变更类型</th>
+            <th data-id="654">说明</th>
+        </tr>
+    </thead>
+    <tbody data-id="655">
+        <tr data-id="656">
+            <td data-id="657"><code data-id="658">/chord/node/{id}/state</code></td>
+            <td data-id="659">GET</td>
+            <td data-id="660">新增</td>
+            <td data-id="661">原子返回 <code data-id="662">{predecessor, successor_list, successor_list_valid}</code>，供 Stabilize 和 Join 使用</td>
+        </tr>
+        <tr data-id="663">
+            <td data-id="664"><code data-id="665">/chord/node/{id}/rectify</code></td>
+            <td data-id="666">POST</td>
+            <td data-id="667">新增（替代 notify）</td>
+            <td data-id="668">执行 Rectify 协议，内含前驱存活验证，包含 Ed25519 签名验证</td>
+        </tr>
+        <tr data-id="669">
+            <td data-id="670"><code data-id="671">/chord/node/{id}/notify</code></td>
+            <td data-id="672">POST</td>
+            <td data-id="673">保留（向后兼容）</td>
+            <td data-id="674">内部重定向至 Rectify 逻辑，行为与 /rectify 完全一致</td>
+        </tr>
+        <tr data-id="675">
+            <td data-id="676"><code data-id="677">/tracker/stable_base</code></td>
+            <td data-id="678">GET</td>
+            <td data-id="679">新增（Tracker）</td>
+            <td data-id="680">返回稳定基成员列表及每个成员的实时存活状态和最后检查时间</td>
+        </tr>
+        <tr data-id="681">
+            <td data-id="682"><code data-id="683">/chord/node/{id}/invariant</code></td>
+            <td data-id="684">GET</td>
+            <td data-id="685">新增（调试）</td>
+            <td data-id="686">返回当前节点的不变式验证报告，包含 successor_list 快照和违反详情（如有）</td>
+        </tr>
+    </tbody>
+</table>
+
+<h2 data-id="687" id="s10-3">10.3 get_state RPC 响应格式</h2>
+
+<p data-id="688"><code data-id="689">GET /chord/node/{id}/state</code> 的响应 JSON 格式如下：</p>
+
+<pre data-id="690">
+{
+  "predecessor": {
+    "node_id": "abc1234...",
+    "uri": "http://node-a:8080"
+  },
+  "successor_list": [
+    { "node_id": "def5678...", "uri": "http://node-b:8080" },
+    { "node_id": "ghi9012...", "uri": "http://node-c:8080" },
+    { "node_id": "jkl3456...", "uri": "http://node-d:8080" },
+    { "node_id": "mno7890...", "uri": "http://node-e:8080" },
+    { "node_id": "pqr1234...", "uri": "http://node-f:8080" }
+  ],
+  "successor_list_valid": true,
+  "snapshot_timestamp": "2026-06-04T23:07:00Z"
+}
+</pre>
+
+<div data-id="691" class="callout callout-note">
+    <div data-id="692" class="callout-label">ℹ 实现说明</div>
+    <p data-id="693">服务端在 <code data-id="694">GET /state</code> 的 handler 内部应对节点状态加读锁（<code data-id="695">sync.RWMutex.RLock()</code>），确保返回的 <code data-id="696">predecessor</code> 和 <code data-id="697">successor_list</code> 来自同一状态快照，避免在高并发下出现前驱与后继列表的逻辑不一致。<code data-id="698">snapshot_timestamp</code> 字段记录快照生成时间，便于接收方评估数据新鲜度。</p>
+</div>
+
+<!-- ============================================================ -->
+<!--  第十一章                                                      -->
+<!-- ============================================================ -->
+
+<hr data-id="699" class="chapter-divider">
+<h1 data-id="700" id="ch11">第十一章：边缘情况与处理策略（≥20 个场景）</h1>
+
+<p data-id="701">以下列举 20 个关键边缘场景，涵盖 Bug-S/N/J/O/B 修正引入的新处理路径，以及与 v2.0–v4.0 扩展的交互边界。</p>
+
+<table data-id="702">
+    <colgroup data-id="703">
+        <col data-id="704" style="width: 8%;">
+        <col data-id="705" style="width: 20%;">
+        <col data-id="706" style="width: 22%;">
+        <col data-id="707" style="width: 50%;">
+    </colgroup>
+    <thead data-id="708">
+        <tr data-id="709">
+            <th data-id="710">场景编号</th>
+            <th data-id="711">场景描述</th>
+            <th data-id="712">触发条件</th>
+            <th data-id="713">处理策略</th>
+        </tr>
+    </thead>
+    <tbody data-id="714">
+        <tr data-id="715">
+            <td data-id="716">11.1</td>
+            <td data-id="717">Stabilize 中 successor.get_state() 超时</td>
+            <td data-id="718">successor 在 Stabilize 执行 get_state() RPC 期间崩溃</td>
+            <td data-id="719">跳过本轮 Stabilize，将 successor 标记为疑似失联，触发 <code data-id="720">check_predecessor</code> 提前执行；下次 Stabilize 前先执行 <code data-id="721">validate_successor_list()</code> 切换至 successor_list[1]</td>
+        </tr>
+        <tr data-id="722">
+            <td data-id="723">11.2</td>
+            <td data-id="724">Rectify 中 ping(predecessor) 超时</td>
+            <td data-id="725">现有前驱崩溃，同时有新候选发来 Rectify 请求</td>
+            <td data-id="726">ping 超时视为前驱死亡（超过 <code data-id="727">ping_liveness_timeout</code>），直接接受候选 N，设 <code data-id="728">predecessor = N</code>；记录前驱切换日志</td>
+        </tr>
+        <tr data-id="729">
+            <td data-id="730">11.3</td>
+            <td data-id="731">Stabilize 候选后继 x 的 ping 超时</td>
+            <td data-id="732">x 在 Stabilize 运行期间（get_state 返回后、ping 执行前）崩溃</td>
+            <td data-id="733">忽略 x，保持原有 successor 不变；下次 Stabilize 再次从 successor.get_state() 获取新候选，重新评估</td>
+        </tr>
+        <tr data-id="734">
+            <td data-id="735">11.4</td>
+            <td data-id="736">Join 时 successor.get_state() 返回空 successor_list</td>
+            <td data-id="737">网络中只有一个节点（单节点环），该节点 successor = self，successor_list = [self]</td>
+            <td data-id="738">合法填充：<code data-id="739">successor_list = [successor] * r</code>；正常完成 Join 并置 ACTIVE；<code data-id="740">validate_successor_list()</code> 接受此状态并记录单节点模式日志</td>
+        </tr>
+        <tr data-id="741">
+            <td data-id="742">11.5</td>
+            <td data-id="743">validate_successor_list 发现所有列表成员均不存活</td>
+            <td data-id="744">多节点并发崩溃，后继列表全部失效（ping 全部超时）</td>
+            <td data-id="745">进入 ISOLATED 状态，执行 v3.0 §4.3 多路径 ISOLATED 恢复（依次尝试 Finger Table 节点、Tracker 引导、已知种子节点）；恢复后重新验证不变式</td>
+        </tr>
+        <tr data-id="746">
+            <td data-id="747">11.6</td>
+            <td data-id="748">稳定基成员数量低于 r+1</td>
+            <td data-id="749">部分稳定基节点崩溃或网络分区导致 Tracker 无法联系</td>
+            <td data-id="750">Tracker 告警日志记录；存活节点继续运行，但系统进入降级模式；Tracker 在 <code data-id="751">/tracker/stable_base</code> 返回 <code data-id="752">"degraded": true</code>；不建议此时执行更多节点 Join/Leave</td>
+        </tr>
+        <tr data-id="753">
+            <td data-id="754">11.7</td>
+            <td data-id="755">Stabilize 返回的候选 x.id = self.id</td>
+            <td data-id="756">环拓扑异常、ID 冲突或 successor 的前驱指针错误回指自身</td>
+            <td data-id="757">拒绝 x，不更新 successor；记录 ERROR 级别日志（ID 冲突需人工排查）；触发 <code data-id="758">invariant_audit</code> 立即输出当前状态快照</td>
+        </tr>
+        <tr data-id="759">
+            <td data-id="760">11.8</td>
+            <td data-id="761">Rectify 收到的候选 N.id = self.id</td>
+            <td data-id="762">ID 冲突或网络分区后的重新合并过程中节点 ID 重叠</td>
+            <td data-id="763">拒绝 N，返回 400 Bad Request；记录 WARN 级别告警日志；不执行任何状态更新</td>
+        </tr>
+        <tr data-id="764">
+            <td data-id="765">11.9</td>
+            <td data-id="766">Join 完成后 validate_successor_list 发现后继列表无序</td>
+            <td data-id="767">后继在 Join 流程执行期间发生拓扑变化（并发 Join 或 Leave）</td>
+            <td data-id="768">重新执行 <code data-id="769">validate_successor_list()</code>；若仍无序，则以当前 successor 为起点重新构建列表（调用 successor.get_state()）；若三次重试后仍失败，进入 ISOLATED 恢复</td>
+        </tr>
+        <tr data-id="770">
+            <td data-id="771">11.10</td>
+            <td data-id="772">两个节点同时 Join，互相成为对方的候选后继</td>
+            <td data-id="773">并发 Join 且两者 ID 在环上相邻，均通过同一 seed 找到对方为后继</td>
+            <td data-id="774">各自独立完成 Join（无需协调）；后续 Stabilize 自然收敛；OrderedSuccessorLists 不变式保证最终正确；无需特殊处理</td>
+        </tr>
+        <tr data-id="775">
+            <td data-id="776">11.11</td>
+            <td data-id="777">稳定基节点本身的 successor 崩溃</td>
+            <td data-id="778">稳定基内部节点失效，导致稳定基内部出现空洞</td>
+            <td data-id="779">稳定基内部 Stabilize 正常切换后继（稳定基有 r+1 个节点，单点失效不影响整体）；<code data-id="780">validate_successor_list()</code> 修复列表；Tracker 记录稳定基成员存活数下降告警</td>
+        </tr>
+        <tr data-id="781">
+            <td data-id="782">11.12</td>
+            <td data-id="783">v4.0 VNode 的 Anchor 崩溃，所有关联 VNode 同时消失</td>
+            <td data-id="784">托管多 VNode 的物理机崩溃，其所有 VNode 同时下线</td>
+            <td data-id="785">稳定基（按物理节点计数）可能受影响，Tracker 告警；各存活节点的 Stabilize 将所有消失 VNode 从后继列表中 ping 超时清除；<code data-id="786">validate_successor_list()</code> 补充后继</td>
+        </tr>
+        <tr data-id="787">
+            <td data-id="788">11.13</td>
+            <td data-id="789">网络分区：环被分成两个不连通片段</td>
+            <td data-id="790">网络中间节点批量失联，导致环在某段弧上断裂</td>
+            <td data-id="791">各片段独立运行（如稳定基成员分布于两个片段，则各片段内部仍可维护）；网络恢复后，通过 Stabilize 和 Rectify 重新合并；稳定基要求保证各片段内有足够节点支撑自愈</td>
+        </tr>
+        <tr data-id="792">
+            <td data-id="793">11.14</td>
+            <td data-id="794">节点 get_state() 返回 successor_list 中包含自身 ID</td>
+            <td data-id="795">小环（如 2 节点环）中 successor_list 填充自身以达到 r 个</td>
+            <td data-id="796">接受此情况（小网络合法初始状态）；记录 DEBUG 日志；随网络扩大，Stabilize 自动修正为真实的 r 个不同节点；不触发不变式违反告警</td>
+        </tr>
+        <tr data-id="797">
+            <td data-id="798">11.15</td>
+            <td data-id="799">ping() 延迟极高但未超时，Stabilize 误判存活</td>
+            <td data-id="800">网络严重拥塞，ping 响应时间接近但未超过 <code data-id="801">request_timeout</code></td>
+            <td data-id="802">设置独立的 <code data-id="803">ping_liveness_timeout</code> 参数（建议 2s，远小于 <code data-id="804">request_timeout</code>）；专门用于存活判断；高延迟节点超过此阈值即视为不存活，不等待业务 RPC 超时</td>
+        </tr>
+        <tr data-id="805">
+            <td data-id="806">11.16</td>
+            <td data-id="807">Rectify 请求因 v2.0 签名验证失败被拒绝</td>
+            <td data-id="808">候选节点证书过期或 Ed25519 签名错误（如时钟偏差过大）</td>
+            <td data-id="809">返回 HTTP 401 Unauthorized，不执行 Rectify 逻辑，不更新 predecessor；调用方应先续签证书或同步时钟后重试；记录签名验证失败日志</td>
+        </tr>
+        <tr data-id="810">
+            <td data-id="811">11.17</td>
+            <td data-id="812">节点在 Join 完成前收到其他节点发来的 Rectify 请求</td>
+            <td data-id="813">并发 Join 场景下，正在 Join 的节点被已有节点的 Stabilize 发现并发来 Rectify</td>
+            <td data-id="814">若节点状态为 <code data-id="815">JOINING</code>，拒绝 Rectify 请求（返回 HTTP 503 Service Unavailable）；完成 Join 并置 ACTIVE 后，后续 Rectify 请求正常处理</td>
+        </tr>
+        <tr data-id="816">
+            <td data-id="817">11.18</td>
+            <td data-id="818">稳定基成员的 URI 发生变更（如 IP 地址更换）</td>
+            <td data-id="819">稳定基节点的网络地址变更（如容器 IP 漂移、DNS 变更）</td>
+            <td data-id="820">更新配置文件中的 <code data-id="821">stable_base_members</code> 并重启 Tracker 以加载新配置；运行中节点通过 Stabilize 感知新 URI（旧 URI 超时后从后继列表移除，新 URI 通过 Rectify 进入）</td>
+        </tr>
+        <tr data-id="822">
+            <td data-id="823">11.19</td>
+            <td data-id="824">validate_successor_list 中 ping 风暴（r 个节点同时 ping）</td>
+            <td data-id="825">维护周期对齐，大量节点同时执行 validate，集体向同一节点发起 ping</td>
+            <td data-id="826">在 <code data-id="827">verify_successor_list</code> 任务的触发时机引入随机抖动（jitter，建议 0–5s 随机延迟）；复用 v3.0 自适应维护调度器中已有的抖动机制；并行 ping 使用 goroutine pool 限制并发度</td>
+        </tr>
+        <tr data-id="828">
+            <td data-id="829">11.20</td>
+            <td data-id="830">节点 Graceful Leave 期间稳定基数量临时低于 r+1</td>
+            <td data-id="831">稳定基节点执行主动 Leave，且尚无接替节点上线</td>
+            <td data-id="832">稳定基节点应先等待接替节点 Join 并通过 Stabilize 稳定（验证接替节点的 OrderedSuccessorLists 满足）后再执行 Leave；Tracker 在 <code data-id="833">check_stable_base</code> 中检测此类提前 Leave 并发出告警，阻止其继续执行（通过运维层面拦截）</td>
+        </tr>
+    </tbody>
+</table>
+
+<!-- ============================================================ -->
+<!--  第十二章                                                      -->
+<!-- ============================================================ -->
+
+<hr data-id="834" class="chapter-divider">
+<h1 data-id="835" id="ch12">第十二章：对 v2.0–v4.0 扩展的影响分析</h1>
+
+<h2 data-id="836" id="s12-1">12.1 对 v2.0（Ed25519 身份验证）的影响</h2>
+
+<table data-id="837">
+    <colgroup data-id="838">
+        <col data-id="839" style="width: 30%;">
+        <col data-id="840" style="width: 70%;">
+    </colgroup>
+    <thead data-id="841">
+        <tr data-id="842">
+            <th data-id="843">影响点</th>
+            <th data-id="844">说明</th>
+        </tr>
+    </thead>
+    <tbody data-id="845">
+        <tr data-id="846">
+            <td data-id="847">Rectify 端点签名要求</td>
+            <td data-id="848">新增 <code data-id="849">/rectify</code> 端点与原 <code data-id="850">/notify</code> 端点具有相同的签名验证要求；调用方须在请求头携带有效的 Ed25519 签名，服务端验证通过后方执行 Rectify 逻辑</td>
+        </tr>
+        <tr data-id="851">
+            <td data-id="852">get_state 端点签名要求</td>
+            <td data-id="853">新增 <code data-id="854">/state</code> 端点需 Ed25519 验证，防止恶意节点伪造 predecessor/successor_list，诱导 Stabilize 采纳错误的候选后继；验证失败返回 401</td>
+        </tr>
+        <tr data-id="855">
+            <td data-id="856">ping 操作的签名豁免</td>
+            <td data-id="857"><code data-id="858">/chord/ping</code> 端点在 v2.0 中已豁免签名验证（用于 ISOLATED 状态下的存活检查）；v5.0 继续豁免，确保节点在无法访问证书服务的情况下（ISOLATED 状态）仍能执行存活判断；<code data-id="859">ping_liveness_timeout</code> 专用参数保持独立</td>
+        </tr>
+        <tr data-id="860">
+            <td data-id="861">稳定基成员间增强认证</td>
+            <td data-id="862">建议稳定基成员之间的 <code data-id="863">get_state</code> 调用使用相互认证（Mutual Authentication），即客户端和服务端双向验证 Ed25519 证书，防止非稳定基节点伪装为稳定基成员获取敏感状态信息</td>
+        </tr>
+        <tr data-id="864">
+            <td data-id="865">invariant 端点访问控制</td>
+            <td data-id="866">调试端点 <code data-id="867">/chord/node/{id}/invariant</code> 建议仅对经 Ed25519 验证的节点开放，防止状态信息泄露；生产环境可通过配置禁用此端点</td>
+        </tr>
+    </tbody>
+</table>
+
+<h2 data-id="868" id="s12-2">12.2 对 v3.0（网络优化）的影响</h2>
+
+<table data-id="869">
+    <colgroup data-id="870">
+        <col data-id="871" style="width: 30%;">
+        <col data-id="872" style="width: 70%;">
+    </colgroup>
+    <thead data-id="873">
+        <tr data-id="874">
+            <th data-id="875">影响点</th>
+            <th data-id="876">说明</th>
+        </tr>
+    </thead>
+    <tbody data-id="877">
+        <tr data-id="878">
+            <td data-id="879">自适应维护周期集成</td>
+            <td data-id="880"><code data-id="881">verify_successor_list</code> 内联至 Stabilize 完成后立即执行，不新增独立调度周期；ACTIVE_MAINTENANCE 模式（15s 间隔）和 QUIET_MAINTENANCE 模式（60s 间隔）下均生效</td>
+        </tr>
+        <tr data-id="882">
+            <td data-id="883">动态后继列表长度</td>
+            <td data-id="884">r 从大变小时直接截取；从小变大时立即触发 <code data-id="885">validate_successor_list()</code> 补充节点；稳定基最小规模 <code data-id="886">stable_base_min_size</code> 随 r 动态更新</td>
+        </tr>
+        <tr data-id="887">
+            <td data-id="888">快速崩溃检测互补</td>
+            <td data-id="889">快速崩溃检测针对直接后继的主动轮询；Stabilize 存活验证（Bug-S 修正）针对第三方候选节点的即时验证；两者互补，分别覆盖不同故障场景，均须保留</td>
+        </tr>
+        <tr data-id="890">
+            <td data-id="891">LRU 路由缓存一致性</td>
+            <td data-id="892">v3.0 的 LRU 路由缓存命中时，建议异步查询目标节点的 <code data-id="893">successor_list_valid</code> 字段（通过 <code data-id="894">/chord/node/{id}/state</code>），若为 false 则使目标节点的缓存条目失效；避免将请求路由至不变式状态异常的节点</td>
+        </tr>
+        <tr data-id="895">
+            <td data-id="896">并行 fix_fingers</td>
+            <td data-id="897">v3.0 的并行 Finger Table 修复（fix_fingers）不受 v5.0 修正影响，继续保留；Finger Table 条目的更新独立于后继列表维护，两者并行执行</td>
+        </tr>
+        <tr data-id="898">
+            <td data-id="899">ping 风暴防护</td>
+            <td data-id="900">v5.0 的 <code data-id="901">validate_successor_list</code> 中的并行 ping 应复用 v3.0 的抖动机制（随机延迟）；建议通过 goroutine pool 限制并发 ping 数量，防止大规模集群下的 ping 风暴</td>
+        </tr>
+    </tbody>
+</table>
+
+<h2 data-id="902" id="s12-3">12.3 对 v4.0（虚拟节点）的影响</h2>
+
+<table data-id="903">
+    <colgroup data-id="904">
+        <col data-id="905" style="width: 30%;">
+        <col data-id="906" style="width: 70%;">
+    </colgroup>
+    <thead data-id="907">
+        <tr data-id="908">
+            <th data-id="909">影响点</th>
+            <th data-id="910">说明</th>
+        </tr>
+    </thead>
+    <tbody data-id="911">
+        <tr data-id="912">
+            <td data-id="913">VNode Join 流程</td>
+            <td data-id="914">每个 VNode 的 Join 必须遵循修正后的 §6.2 流程，包含完整的 successor_list 初始化（<code data-id="915">[successor] + succ_state.successor_list[:r-1]</code>）；不可沿用 v4.0 原始 Join 逻辑</td>
+        </tr>
+        <tr data-id="916">
+            <td data-id="917">VNode Stabilize</td>
+            <td data-id="918">每个 VNode 独立运行 Stabilize，均须执行候选存活验证（Bug-S 修正）；同一 Anchor 上的多个 VNode 的 Stabilize 应错开执行时间（利用抖动），避免同一物理机同时发出大量 get_state RPC</td>
+        </tr>
+        <tr data-id="919">
+            <td data-id="920">VNode Rectify</td>
+            <td data-id="921">每个 VNode 独立处理 Rectify 请求，均须检查现有前驱存活性（Bug-N 修正）；VNode 之间的 Rectify 互相独立，不共享前驱状态</td>
+        </tr>
+        <tr data-id="922">
+            <td data-id="923">稳定基计数规则</td>
+            <td data-id="924">稳定基按物理节点（Anchor）计数，而非 VNode 数；配置文件中 <code data-id="925">stable_base_members</code> 应填写 Anchor 的 URI，每个 Anchor 计 1 个稳定基名额</td>
+        </tr>
+        <tr data-id="926">
+            <td data-id="927">VNode 批量崩溃处理</td>
+            <td data-id="928">Anchor 崩溃导致其所有 VNode 同时消失；存活节点的 <code data-id="929">validate_successor_list()</code> 会在下一个 Stabilize 周期通过 ping 超时将这些 VNode 从后继列表中清除，并补充后继；稳定基计数下降，Tracker 告警</td>
+        </tr>
+        <tr data-id="930">
+            <td data-id="931">VNodeProof 在 get_state 响应中的包含</td>
+            <td data-id="932"><code data-id="933">GET /state</code> 响应中的 <code data-id="934">successor_list</code> 条目应包含每个节点的 <code data-id="935">vnode_proof</code> 字段（供接收方验证 VNode 身份合法性）；Stabilize 接收 get_state 响应后应验证各 VNode 的 <code data-id="936">vnode_proof</code>，拒绝无效 VNodeProof 的节点进入后继列表</td>
+        </tr>
+    </tbody>
+</table>
+
+<!-- ============================================================ -->
+<!--  第十三章                                                      -->
+<!-- ============================================================ -->
+
+<hr data-id="937" class="chapter-divider">
+<h1 data-id="938" id="ch13">第十三章：配置参数与实现建议</h1>
+
+<h2 data-id="939" id="s13-1">13.1 新增配置参数</h2>
+
+<table data-id="940">
+    <colgroup data-id="941">
+        <col data-id="942" style="width: 38%;">
+        <col data-id="943" style="width: 12%;">
+        <col data-id="944" style="width: 12%;">
+        <col data-id="945" style="width: 38%;">
+    </colgroup>
+    <thead data-id="946">
+        <tr data-id="947">
+            <th data-id="948">参数名</th>
+            <th data-id="949">类型</th>
+            <th data-id="950">默认值</th>
+            <th data-id="951">说明</th>
+        </tr>
+    </thead>
+    <tbody data-id="952">
+        <tr data-id="953">
+            <td data-id="954"><code data-id="955">ping_liveness_timeout</code></td>
+            <td data-id="956">Duration</td>
+            <td data-id="957">2s</td>
+            <td data-id="958">专用于存活验证的 ping 超时，独立于业务 RPC 的 <code data-id="959">request_timeout</code>，建议设置较短以快速判断存活性</td>
+        </tr>
+        <tr data-id="960">
+            <td data-id="961"><code data-id="962">stabilize_atomic_state</code></td>
+            <td data-id="963">bool</td>
+            <td data-id="964">true</td>
+            <td data-id="965">是否在一次 RPC 中原子获取 predecessor+successor_list（推荐 true）；设为 false 时退化为分步查询（v4.0 行为，不推荐）</td>
+        </tr>
+        <tr data-id="966">
+            <td data-id="967"><code data-id="968">validate_after_stabilize</code></td>
+            <td data-id="969">bool</td>
+            <td data-id="970">true</td>
+            <td data-id="971">每次 Stabilize 完成后是否执行 <code data-id="972">validate_successor_list()</code>；设为 false 可用于性能调试，但会降低正确性保证</td>
+        </tr>
+        <tr data-id="973">
+            <td data-id="974"><code data-id="975">stable_base_min_size</code></td>
+            <td data-id="976">int</td>
+            <td data-id="977">r+1</td>
+            <td data-id="978">稳定基最小成员数；应与当前生效的 r 值保持一致（r 变化时需同步更新）</td>
+        </tr>
+        <tr data-id="979">
+            <td data-id="980"><code data-id="981">stable_base_members</code></td>
+            <td data-id="982">[]string</td>
+            <td data-id="983">[]</td>
+            <td data-id="984">稳定基成员的 Anchor URI 列表（静态配置，如 <code data-id="985">["http://anchor-a:8080","http://anchor-b:8080"]</code>）</td>
+        </tr>
+        <tr data-id="986">
+            <td data-id="987"><code data-id="988">stable_base_check_interval</code></td>
+            <td data-id="989">Duration</td>
+            <td data-id="990">30s</td>
+            <td data-id="991">Tracker 检查稳定基成员存活性的周期；建议不小于 <code data-id="992">ping_liveness_timeout</code> 的 10 倍</td>
+        </tr>
+        <tr data-id="993">
+            <td data-id="994"><code data-id="995">rectify_endpoint_alias</code></td>
+            <td data-id="996">bool</td>
+            <td data-id="997">true</td>
+            <td data-id="998">是否将 <code data-id="999">/notify</code> 作为 <code data-id="1000">/rectify</code> 的别名（向后兼容）；升级完成后可设为 false 以明确禁用旧端点</td>
+        </tr>
+        <tr data-id="1001">
+            <td data-id="1002"><code data-id="1003">invariant_audit_interval</code></td>
+            <td data-id="1004">Duration</td>
+            <td data-id="1005">300s</td>
+            <td data-id="1006">调试模式下不变式审计周期；设为 0 表示禁用；生产环境建议禁用或设置较长间隔（≥600s）</td>
+        </tr>
+    </tbody>
+</table>
+
+<h2 data-id="1007" id="s13-2">13.2 实现建议（Go 语言）</h2>
+
+<p data-id="1008"><strong data-id="1009">存活验证 ping 的实现要点</strong>：使用专用的 liveness timeout context，避免与业务 RPC 超时混用：</p>
+
+<pre data-id="1010">
+// pingLiveness 使用专用的 liveness timeout，独立于业务 RPC 超时
+func (n *Node) pingLiveness(target NodeInfo) bool {
+    ctx, cancel := context.WithTimeout(
+        context.Background(),
+        n.config.PingLivenessTimeout, // 建议 2s
+    )
+    defer cancel()
+    _, err := n.client.Ping(ctx, target.URI)
+    if err != nil {
+        n.logger.Debugf("ping liveness failed for %s: %v", target.NodeID[:8], err)
+        return false
+    }
+    return true
+}
+</pre>
+
+<p data-id="1011"><strong data-id="1012">Rectify 端点的 Go 实现要点</strong>：</p>
+
+<pre data-id="1013">
+// Rectify 实现 Bug-N 修正：先验证现有前驱存活性，再决定是否接受候选
+func (n *Node) HandleRectify(candidate NodeInfo) error {
+    n.mu.Lock()
+    defer n.mu.Unlock()
+
+    if n.predecessor == nil {
+        n.predecessor = &candidate
+        return nil
+    }
+
+    // Bug-N 修正：先检查现有前驱存活性
+    if !n.pingLiveness(*n.predecessor) {
+        // 现有前驱不可达，无条件接受候选
+        n.predecessor = &candidate
+        n.logger.Infof("predecessor dead, accepted new predecessor %s", candidate.NodeID[:8])
+        return nil
+    }
+
+    // 现有前驱存活，再比较 ID 范围
+    if isBetweenClockwise(n.predecessor.NodeID, candidate.NodeID, n.nodeID) {
+        n.predecessor = &candidate
+    }
+    return nil
+}
+</pre>
+
+<p data-id="1014"><strong data-id="1015">get_state 原子 RPC 的实现要点</strong>（服务端）：</p>
+
+<pre data-id="1016">
+// HandleGetState 原子返回 predecessor 和 successor_list 快照
+func (n *Node) HandleGetState(w http.ResponseWriter, r *http.Request) {
+    n.mu.RLock() // 读锁，保证 predecessor 和 successor_list 来自同一快照
+    resp := StateResponse{
+        Predecessor:        n.predecessor,
+        SuccessorList:      n.successorList,
+        SuccessorListValid: n.successorListValid,
+        SnapshotTimestamp:  time.Now().UTC().Format(time.RFC3339),
+    }
+    n.mu.RUnlock()
+
+    w.Header().Set("Content-Type", "application/json")
+    json.NewEncoder(w).Encode(resp)
+}
+</pre>
+
+<p data-id="1017"><strong data-id="1018">validate_successor_list 的并发控制</strong>：</p>
+
+<pre data-id="1019">
+// validateSuccessorList 并行 ping 所有后继，过滤死亡节点，补充至 r 个
+func (n *Node) validateSuccessorList() {
+    current := n.getSuccessorListCopy() // 加锁复制，避免长时间持锁
+
+    // 并行 ping，使用 WaitGroup + channel 收集结果
+    results := make([]bool, len(current))
+    var wg sync.WaitGroup
+    for i, node := range current {
+        wg.Add(1)
+        go func(idx int, target NodeInfo) {
+            defer wg.Done()
+            results[idx] = n.pingLiveness(target)
+        }(i, node)
+    }
+    wg.Wait()
+
+    // 过滤存活节点
+    valid := make([]NodeInfo, 0, n.config.SuccessorListSize)
+    for i, node := range current {
+        if results[i] {
+            valid = append(valid, node)
+        }
+    }
+
+    // 补充后继（若不足 r 个）
+    if len(valid) < n.config.SuccessorListSize && len(valid) > 0 {
+        last := valid[len(valid)-1]
+        state, err := n.client.GetState(context.Background(), last.URI)
+        if err == nil {
+            for _, node := range state.SuccessorList {
+                if len(valid) >= n.config.SuccessorListSize {
+                    break
+                }
+                if node.NodeID != n.nodeID && !contains(valid, node) {
+                    if n.pingLiveness(node) {
+                        valid = append(valid, node)
+                    }
+                }
+            }
+        }
+    }
+
+    // 原子写回
+    n.mu.Lock()
+    n.successorList = valid
+    n.successorListValid = n.checkOrderedInvariant(valid)
+    if len(valid) > 0 {
+        n.successor = &valid[0]
+    } else {
+        n.state = StateIsolated
+    }
+    n.mu.Unlock()
+}
+</pre>
+
+<h2 data-id="1020" id="s13-3">13.3 迁移路径（从 v4.0 升级至 v5.0）</h2>
+
+<p data-id="1021">以下迁移步骤设计为可逐步推进的增量升级，每步均保持向后兼容，无需全网协调停机：</p>
+
+<table data-id="1022">
+    <colgroup data-id="1023">
+        <col data-id="1024" style="width: 8%;">
+        <col data-id="1025" style="width: 42%;">
+        <col data-id="1026" style="width: 50%;">
+    </colgroup>
+    <thead data-id="1027">
+        <tr data-id="1028">
+            <th data-id="1029">步骤</th>
+            <th data-id="1030">操作</th>
+            <th data-id="1031">风险说明</th>
+        </tr>
+    </thead>
+    <tbody data-id="1032">
+        <tr data-id="1033">
+            <td data-id="1034">1</td>
+            <td data-id="1035">为所有节点部署新的 <code data-id="1036">/rectify</code> 和 <code data-id="1037">/state</code> 端点，启用 <code data-id="1038">rectify_endpoint_alias = true</code></td>
+            <td data-id="1039">低；新端点不影响现有 v4.0 节点的调用行为，向后完全兼容</td>
+        </tr>
+        <tr data-id="1040">
+            <td data-id="1041">2</td>
+            <td data-id="1042">在 Notify 处理器内部透明切换为 Rectify 语义（增加前驱存活验证逻辑）</td>
+            <td data-id="1043">低；调用方无感知，协议行为更严格但不破坏接口契约</td>
+        </tr>
+        <tr data-id="1044">
+            <td data-id="1045">3</td>
+            <td data-id="1046">在 Stabilize 中启用候选存活验证（通过 <code data-id="1047">stabilize_candidate_ping = true</code> 配置开关控制，默认关闭，逐步开启）</td>
+            <td data-id="1048">低；额外 ping 操作增加轻微延迟，建议在非高峰期首批节点开启验证</td>
+        </tr>
+        <tr data-id="1049">
+            <td data-id="1050">4</td>
+            <td data-id="1051">在 Join 流程中启用完整 <code data-id="1052">successor_list</code> 初始化（切换为 get_state 原子 RPC）</td>
+            <td data-id="1053">中；需测试新节点加入流程（尤其是单节点网络和小网络场景）；建议先在测试环境验证</td>
+        </tr>
+        <tr data-id="1054">
+            <td data-id="1055">5</td>
+            <td data-id="1056">启用 <code data-id="1057">validate_after_stabilize = true</code>，全网所有节点每次 Stabilize 后执行不变式验证</td>
+            <td data-id="1058">低；增加少量 ping 开销；建议在 QUIET_MAINTENANCE 模式下先观察 <code data-id="1059">invariant_audit</code> 日志</td>
+        </tr>
+        <tr data-id="1060">
+            <td data-id="1061">6</td>
+            <td data-id="1062">规划并配置稳定基成员（<code data-id="1063">stable_base_members</code>），部署 Tracker 稳定基监控（<code data-id="1064">/tracker/stable_base</code>）</td>
+            <td data-id="1065">中；需要运维规划（选定 r+1 个永久节点），以及告警系统集成；需提前确认稳定基节点的高可用保障</td>
+        </tr>
+        <tr data-id="1066">
+            <td data-id="1067">7</td>
+            <td data-id="1068">在调试模式下启用 <code data-id="1069">invariant_audit_interval = 300s</code>，持续监控不变式满足情况</td>
+            <td data-id="1070">低；调试日志开销可接受；生产环境可设置较长间隔或禁用</td>
+        </tr>
+    </tbody>
+</table>
+
+<div data-id="1071" class="callout callout-important">
+    <div data-id="1072" class="callout-label">⚡ 升级注意事项</div>
+    <p data-id="1073">步骤 6（稳定基配置）是唯一需要运维规划的步骤，也是与 v4.0 差异最大的变更。建议在步骤 1–5 完成并稳定运行至少一周后，再推进步骤 6。稳定基成员应选择具有独立电源、独立网络的物理节点，避免单点基础设施故障导致稳定基整体失效。</p>
+</div>
+
+<p data-id="1074" style="margin-top: 36pt; color: #666666; font-size: 9.5pt; border-top: 1px solid #cccccc; padding-top: 8pt;">
+    文档版本 v5.0 &nbsp;|&nbsp; 创建日期：2026 年 6 月 4 日 &nbsp;|&nbsp; 基于 Pamela Zave, "How to Make Chord Correct," IEEE Transactions on Software Engineering, 43(12):1144–1156, 2017 &nbsp;|&nbsp; 适用范围：学习用途
+</p>
+
+</body>
+</html>
